@@ -21,11 +21,11 @@ public class AlgoritmoClave {
     private Long id;
 
     @Column(name = "ac_codigo", nullable = false, unique = true)
-    private String codigo;
+    private String ACCodigo;
 
     @Column(name = "ac_nombre", nullable = false)
-    private String nombre;
+    private String ACNombre;
 
     @Column(name = "ac_fecha_baja")
-    private LocalDate fechaBaja;
+    private LocalDate ACFechaBaja;
 }

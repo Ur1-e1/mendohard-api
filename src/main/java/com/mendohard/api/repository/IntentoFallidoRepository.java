@@ -13,6 +13,6 @@ import java.util.Optional;
 @Repository
 public interface IntentoFallidoRepository extends JpaRepository<IntentoFallido, Long> {
 
-    @Query("SELECT i FROM IntentoFallido i WHERE i.usuario.id = :usuarioId AND i.fecha = :fecha")
+    @Query("SELECT i FROM IntentoFallido i WHERE i.usuario.id = :usuarioId AND i.IFFecha = :fecha")
     Optional<IntentoFallido> findByUsuarioIdAndFecha(@Param("usuarioId") Long usuarioId, @Param("fecha") LocalDate fecha);
 }

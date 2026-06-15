@@ -1,0 +1,274 @@
+package com.mendohard.api.service.impl;
+
+
+import com.mendohard.api.dto.RegistroConsumidorRequestDTO;
+import com.mendohard.api.dto.RegistroResponseDTO;
+import com.mendohard.api.dto.RegistroVendedorRequestDTO;
+import com.mendohard.api.dto.UbicacionesVendedorDTO;
+import com.mendohard.api.exception.RegistroException;
+import com.mendohard.api.model.*;
+import com.mendohard.api.repository.*;
+import com.mendohard.api.service.RegistroService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class RegistroServiceImpl implements RegistroService {
+
+    private final ConsumidorRepository consumidorRepository;
+    private final VendedorRepository vendedorRepository;
+    private final ComercioRepository comercioRepository;
+    private final DepartamentoRepository departamentoRepository;
+    private final EstadoVendedorRepository estadoVendedorRepository;
+    private final EstadoComercioRepository estadoComercioRepository;
+    private final VendedorEstadoRepository vendedorEstadoRepository;
+    private final ComercioEstadoRepository comercioEstadoRepository;
+    private final ClaveRepository claveRepository;
+
+    @Override
+    public List<UbicacionesVendedorDTO> obtenerUbicacionesVendedor() {
+        log.info("Obteniendo ubicaciones disponibles para registro de vendedor");
+
+        List<Departamento> departamentosActivos = departamentoRepository.findAllActivos();
+
+        List<UbicacionesVendedorDTO> ubicaciones = departamentosActivos.stream()
+                .map(departamento -> {
+                    Provincia provincia = departamento.getProvincia();
+                    Pais pais = provincia.getPais();
+
+                    return UbicacionesVendedorDTO.builder()
+                            .DCodigo(departamento.getDCodigo())
+                            .DNombre(departamento.getDNombre())
+                            .ProCodigo(provincia.getProCodigo())
+                            .ProNombre(provincia.getProNombre())
+                            .PCodigo(pais.getPCodigo())
+                            .PNombre(pais.getPNombre())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        log.info("Se retornaron {} ubicaciones disponibles", ubicaciones.size());
+        return ubicaciones;
+    }
+
+    @Override
+    @Transactional
+    public RegistroResponseDTO registrarConsumidor(RegistroConsumidorRequestDTO request) {
+        log.info("Iniciando registro de consumidor con email: {}", request.getUEmail());
+
+        validarContraseñasConsumidorCoincidan(request.getContrasena(), request.getConfirmacionContrasena());
+
+        validarUnicidadConsumidor(request.getUEmail(), request.getCApodo());
+
+        AlgoritmoClave algoritmoClave = new AlgoritmoClave();
+        algoritmoClave.setId(1L);
+
+        Rol rol = new Rol();
+        rol.setId(3L);
+
+        Consumidor consumidor = Consumidor.builder()
+                .UNombre(request.getUNombre())
+                .UApellido(request.getUApellido())
+                .UEmail(request.getUEmail())
+                .CApodo(request.getCApodo())
+                .UCodigo("TEMP")
+                .UFechaAlta(LocalDate.now())
+                .algoritmoClave(algoritmoClave)
+                .rol(rol)
+                .build();
+
+        consumidor = consumidorRepository.save(consumidor);
+        Long consumidorId = consumidor.getId();
+        log.info("Consumidor creado con ID: {}", consumidorId);
+
+        String codigoConsumidor = "CONS-" + consumidorId;
+        consumidor.setUCodigo(codigoConsumidor);
+        consumidor = consumidorRepository.save(consumidor);
+        log.info("Código de consumidor generado: {}", codigoConsumidor);
+
+        generarYGuardarClave(consumidor, request.getContrasena());
+
+        return RegistroResponseDTO.builder()
+                .usuarioId(consumidorId)
+                .UCodigo(codigoConsumidor)
+                .UEmail(request.getUEmail())
+                .UNombre(request.getUNombre())
+                .tipoUsuario("Consumidor")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public RegistroResponseDTO registrarVendedor(RegistroVendedorRequestDTO request) {
+        log.info("Iniciando registro de vendedor con email: {}", request.getUEmail());
+
+        validarContraseñasVendedorCoincidan(request.getContrasena(), request.getConfirmacionContrasena());
+
+        validarUnicidadVendedor(request.getUEmail(), request.getVCuit());
+
+        Departamento departamento = departamentoRepository.findByCodigoDepartamento(request.getDCodigo())
+                .orElseThrow(() -> new RegistroException("Departamento no encontrado con código: " + request.getDCodigo()));
+
+        EstadoVendedor estadoVendedor = estadoVendedorRepository.findByNombreActivo("VendedorPendiente")
+                .orElseThrow(() -> new RegistroException("Estado 'VendedorPendiente' no encontrado"));
+
+        EstadoComercio estadoComercio = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
+                .orElseThrow(() -> new RegistroException("Estado 'ComercioPendiente' no encontrado"));
+
+        AlgoritmoClave algoritmoClave = new AlgoritmoClave();
+        algoritmoClave.setId(1L);
+
+        Rol rol = new Rol();
+        rol.setId(2L);
+
+        Vendedor vendedor = Vendedor.builder()
+                .UNombre(request.getUNombre())
+                .UApellido(request.getUApellido())
+                .UEmail(request.getUEmail())
+                .VTelefono(request.getVTelefono())
+                .VCuit(request.getVCuit())
+                .VRazonSocial(request.getVRazonSocial())
+                .VCategoriaFiscal(request.getVCategoriaFiscal())
+                .UCodigo("TEMP")
+                .UFechaAlta(LocalDate.now())
+                .algoritmoClave(algoritmoClave)
+                .rol(rol)
+                .vendedorEstados(new ArrayList<>())
+                .comercios(new ArrayList<>())
+                .build();
+
+        vendedor = vendedorRepository.save(vendedor);
+        Long vendedorId = vendedor.getId();
+        log.info("Vendedor creado con ID: {}", vendedorId);
+
+        String codigoVendedor = "V-" + vendedorId;
+        vendedor.setUCodigo(codigoVendedor);
+        vendedor = vendedorRepository.save(vendedor);
+        log.info("Código de vendedor generado: {}", codigoVendedor);
+
+        generarYGuardarClave(vendedor, request.getContrasena());
+
+        VendedorEstado vendedorEstado = VendedorEstado.builder()
+                .VEFechaDesde(LocalDate.now())
+                .VEFechaHasta(null)
+                .estadoVendedor(estadoVendedor)
+                .build();
+
+        vendedorEstadoRepository.save(vendedorEstado);
+        vendedor.getVendedorEstados().add(vendedorEstado);
+        log.info("VendedorEstado 'VendedorPendiente' asociado con fecha desde: {}", LocalDate.now());
+
+        Comercio comercio = Comercio.builder()
+                .CNombreFantasia(request.getCNombreFantasia())
+                .CTelefono(request.getCTelefono())
+                .CDireccionCalle(request.getCDireccionCalle())
+                .CNumeroEnCalle(request.getCNumeroEnCalle())
+                .CLatitud(request.getCLatitud())
+                .CLongitud(request.getCLongitud())
+                .CHorarioAtencion(request.getCHorarioAtencion())
+                .CFechaSolicitud(LocalDate.now())
+                .CFechaAlta(null)
+                .CFechaBaja(null)
+                .CCodigo("TEMP")
+                .departamento(departamento)
+                .comercioEstados(new ArrayList<>())
+                .build();
+
+        comercio = comercioRepository.save(comercio);
+        Long comercioId = comercio.getId();
+        log.info("Comercio creado con ID: {}", comercioId);
+
+        String codigoComercio = "C-" + comercioId;
+        comercio.setCCodigo(codigoComercio);
+        comercio = comercioRepository.save(comercio);
+        log.info("Código de comercio generado: {}", codigoComercio);
+
+        ComercioEstado comercioEstado = ComercioEstado.builder()
+                .CEFechaDesde(LocalDate.now())
+                .CEFechaHasta(null)
+                .estadoComercio(estadoComercio)
+                .build();
+
+        comercioEstadoRepository.save(comercioEstado);
+        comercio.getComercioEstados().add(comercioEstado);
+        comercio = comercioRepository.save(comercio);
+        log.info("ComercioEstado 'ComercioPendiente' asociado con fecha desde: {}", LocalDate.now());
+
+        vendedor.getComercios().add(comercio);
+        vendedorRepository.save(vendedor);
+        log.info("Comercio asociado al vendedor con ID: {}", vendedorId);
+
+        log.info("Registro de vendedor completado con ID: {}", vendedorId);
+
+        return RegistroResponseDTO.builder()
+                .usuarioId(vendedorId)
+                .UCodigo(codigoVendedor)
+                .UEmail(request.getUEmail())
+                .UNombre(request.getUNombre())
+                .tipoUsuario("Vendedor")
+                .build();
+    }
+
+    private void validarContraseñasConsumidorCoincidan(String contrasena, String confirmacion) {
+        if (!contrasena.equals(confirmacion)) {
+            throw new RegistroException("No coincide la contraseña con la confirmación de contraseña");
+        }
+    }
+
+    private void validarContraseñasVendedorCoincidan(String contrasena, String confirmacion) {
+        if (!contrasena.equals(confirmacion)) {
+            throw new RegistroException("La contraseña ingresada es distinta a la confirmación de la contraseña");
+        }
+    }
+
+    private void validarUnicidadConsumidor(String email, String apodo) {
+        if (consumidorRepository.findByEmailActivo(email).isPresent()) {
+            throw new RegistroException("Ya existe un Consumidor registrado con el mismo Email o Apodo, cambiarlo");
+        }
+        if (consumidorRepository.findByApodoActivo(apodo).isPresent()) {
+            throw new RegistroException("Ya existe un Consumidor registrado con el mismo Email o Apodo, cambiarlo");
+        }
+    }
+
+    private void validarUnicidadVendedor(String email, String cuit) {
+        if (vendedorRepository.findByEmailActivo(email).isPresent()) {
+            throw new RegistroException("Ya existe un comercio registrado con los datos ingresados");
+        }
+        if (vendedorRepository.findByCuitActivo(cuit).isPresent()) {
+            throw new RegistroException("Ya existe un comercio registrado con los datos ingresados");
+        }
+    }
+
+    private void generarYGuardarClave(Usuario usuario, String contrasena) {
+        String salt = generarSalt();
+        String textoAHasher = contrasena + salt;
+        String contrasenaCifrada = DigestUtils.md5DigestAsHex(textoAHasher.getBytes());
+
+        Clave clave = Clave.builder()
+                .CCodigo(usuario.getUCodigo())
+                .CContrasena(contrasenaCifrada)
+                .CSalt(salt)
+                .usuario(usuario)
+                .build();
+
+        claveRepository.save(clave);
+        log.info("Clave generada y guardada con hash MD5 y salt de 6 dígitos para usuario ID: {}", usuario.getId());
+    }
+
+    private String generarSalt() {
+        Random random = new Random();
+        int saltNumerico = 100000 + random.nextInt(900000);
+        return String.valueOf(saltNumerico);
+    }
+}

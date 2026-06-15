@@ -19,5 +19,5 @@ import lombok.experimental.SuperBuilder;
 public class ResponsableMendoHard extends Usuario {
 
     @Column(name = "rmh_legajo", nullable = false, unique = true)
-    private String legajo;
+    private String RMHLegajo;
 }

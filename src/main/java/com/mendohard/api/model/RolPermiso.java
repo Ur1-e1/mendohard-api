@@ -21,10 +21,10 @@ public class RolPermiso {
     private Long id;
 
     @Column(name = "rp_fecha_desde", nullable = false)
-    private LocalDate fechaDesde;
+    private LocalDate RPFechaDesde;
 
     @Column(name = "rp_fecha_hasta")
-    private LocalDate fechaHasta;
+    private LocalDate RPFechaHasta;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "permiso_id", nullable = false)

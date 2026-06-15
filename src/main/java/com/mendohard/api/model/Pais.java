@@ -3,18 +3,18 @@ package com.mendohard.api.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "permiso")
+@Table(name = "pais")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Permiso {
+@SuperBuilder
+public class Pais {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,10 +26,7 @@ public class Permiso {
     @Column(name = "p_nombre", nullable = false)
     private String PNombre;
 
-    @Column(name = "p_descripcion")
-    private String PDescripcion;
-
-    @Column(name = "p_fecha_alta", nullable = false)
+    @Column(name = "p_fecha_alta")
     private LocalDate PFechaAlta;
 
     @Column(name = "p_fecha_baja")

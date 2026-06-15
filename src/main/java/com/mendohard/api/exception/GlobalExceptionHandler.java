@@ -25,7 +25,6 @@ public class GlobalExceptionHandler {
         response.put("timestamp", LocalDateTime.now());
         response.put("codigo", 401);
 
-        // Si la excepción transporta el valor de IFCantidad, lo mapeamos directamente al JSON
         if (ex.getCantidad() != null) {
             response.put("cantidad", ex.getCantidad());
         }
@@ -36,6 +35,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IntentosMaximosException.class)
     public ResponseEntity<Map<String, Object>> handleIntentosMaximosException(IntentosMaximosException ex) {
         log.error("IntentosMaximosException: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+        response.put("codigo", 400);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(RegistroException.class)
+    public ResponseEntity<Map<String, Object>> handleRegistroException(RegistroException ex) {
+        log.error("RegistroException: {}", ex.getMessage());
 
         Map<String, Object> response = new HashMap<>();
         response.put("mensaje", ex.getMessage());

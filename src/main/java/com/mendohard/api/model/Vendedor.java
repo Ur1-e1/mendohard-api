@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import java.util.List;
 
 @Entity
 @Table(name = "vendedor")
@@ -19,14 +20,22 @@ import lombok.experimental.SuperBuilder;
 public class Vendedor extends Usuario {
 
     @Column(name = "v_telefono")
-    private String telefono;
+    private String VTelefono;
 
     @Column(name = "v_cuit", nullable = false, unique = true)
-    private String cuit;
+    private String VCuit;
 
     @Column(name = "v_razon_social", nullable = false)
-    private String razonSocial;
+    private String VRazonSocial;
 
     @Column(name = "v_categoria_fiscal")
-    private String categoriaFiscal;
+    private String VCategoriaFiscal;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "vendedor_id")
+    private List<VendedorEstado> vendedorEstados;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "vendedor_id")
+    private List<Comercio> comercios;
 }

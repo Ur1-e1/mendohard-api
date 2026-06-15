@@ -19,5 +19,5 @@ import lombok.experimental.SuperBuilder;
 public class Consumidor extends Usuario {
 
     @Column(name = "c_apodo")
-    private String apodo;
+    private String CApodo;
 }
