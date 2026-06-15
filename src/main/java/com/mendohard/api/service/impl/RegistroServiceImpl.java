@@ -9,16 +9,16 @@ import com.mendohard.api.exception.RegistroException;
 import com.mendohard.api.model.*;
 import com.mendohard.api.repository.*;
 import com.mendohard.api.service.RegistroService;
+import com.mendohard.api.service.strategy.ClaveStrategy;
+import com.mendohard.api.service.factory.ClaveStrategyFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.DigestUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,7 +34,8 @@ public class RegistroServiceImpl implements RegistroService {
     private final EstadoComercioRepository estadoComercioRepository;
     private final VendedorEstadoRepository vendedorEstadoRepository;
     private final ComercioEstadoRepository comercioEstadoRepository;
-    private final ClaveRepository claveRepository;
+    private final AlgoritmoClaveRepository algoritmoClaveRepository; // Inyectado
+    private final ClaveStrategyFactory claveStrategyFactory; // Inyectado
 
     @Override
     public List<UbicacionesVendedorDTO> obtenerUbicacionesVendedor() {
@@ -68,11 +69,11 @@ public class RegistroServiceImpl implements RegistroService {
         log.info("Iniciando registro de consumidor con email: {}", request.getUEmail());
 
         validarContraseñasConsumidorCoincidan(request.getContrasena(), request.getConfirmacionContrasena());
-
         validarUnicidadConsumidor(request.getUEmail(), request.getCApodo());
 
-        AlgoritmoClave algoritmoClave = new AlgoritmoClave();
-        algoritmoClave.setId(1L);
+        // Cargamos el algoritmo real de la base de datos para conocer su nombre maestro
+        AlgoritmoClave algoritmoClave = algoritmoClaveRepository.findById(1L)
+                .orElseThrow(() -> new RegistroException("Algoritmo de clave base no configurado en el sistema"));
 
         Rol rol = new Rol();
         rol.setId(3L);
@@ -97,7 +98,9 @@ public class RegistroServiceImpl implements RegistroService {
         consumidor = consumidorRepository.save(consumidor);
         log.info("Código de consumidor generado: {}", codigoConsumidor);
 
-        generarYGuardarClave(consumidor, request.getContrasena());
+        // DELEGACIÓN AL PATRÓN FACTORY + STRATEGY
+        ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmoClave.getACNombre());
+        strategy.generarYGuardarClave(consumidor, request.getContrasena());
 
         return RegistroResponseDTO.builder()
                 .usuarioId(consumidorId)
@@ -114,7 +117,6 @@ public class RegistroServiceImpl implements RegistroService {
         log.info("Iniciando registro de vendedor con email: {}", request.getUEmail());
 
         validarContraseñasVendedorCoincidan(request.getContrasena(), request.getConfirmacionContrasena());
-
         validarUnicidadVendedor(request.getUEmail(), request.getVCuit());
 
         Departamento departamento = departamentoRepository.findByCodigoDepartamento(request.getDCodigo())
@@ -126,8 +128,9 @@ public class RegistroServiceImpl implements RegistroService {
         EstadoComercio estadoComercio = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
                 .orElseThrow(() -> new RegistroException("Estado 'ComercioPendiente' no encontrado"));
 
-        AlgoritmoClave algoritmoClave = new AlgoritmoClave();
-        algoritmoClave.setId(1L);
+        // Cargamos el algoritmo real de la base de datos para conocer su nombre maestro
+        AlgoritmoClave algoritmoClave = algoritmoClaveRepository.findById(1L)
+                .orElseThrow(() -> new RegistroException("Algoritmo de clave base no configurado en el sistema"));
 
         Rol rol = new Rol();
         rol.setId(2L);
@@ -157,7 +160,9 @@ public class RegistroServiceImpl implements RegistroService {
         vendedor = vendedorRepository.save(vendedor);
         log.info("Código de vendedor generado: {}", codigoVendedor);
 
-        generarYGuardarClave(vendedor, request.getContrasena());
+        // DELEGACIÓN AL PATRÓN FACTORY + STRATEGY
+        ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmoClave.getACNombre());
+        strategy.generarYGuardarClave(vendedor, request.getContrasena());
 
         VendedorEstado vendedorEstado = VendedorEstado.builder()
                 .VEFechaDesde(LocalDate.now())
@@ -248,27 +253,5 @@ public class RegistroServiceImpl implements RegistroService {
         if (vendedorRepository.findByCuitActivo(cuit).isPresent()) {
             throw new RegistroException("Ya existe un comercio registrado con los datos ingresados");
         }
-    }
-
-    private void generarYGuardarClave(Usuario usuario, String contrasena) {
-        String salt = generarSalt();
-        String textoAHasher = contrasena + salt;
-        String contrasenaCifrada = DigestUtils.md5DigestAsHex(textoAHasher.getBytes());
-
-        Clave clave = Clave.builder()
-                .CCodigo(usuario.getUCodigo())
-                .CContrasena(contrasenaCifrada)
-                .CSalt(salt)
-                .usuario(usuario)
-                .build();
-
-        claveRepository.save(clave);
-        log.info("Clave generada y guardada con hash MD5 y salt de 6 dígitos para usuario ID: {}", usuario.getId());
-    }
-
-    private String generarSalt() {
-        Random random = new Random();
-        int saltNumerico = 100000 + random.nextInt(900000);
-        return String.valueOf(saltNumerico);
     }
 }
