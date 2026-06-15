@@ -13,13 +13,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query("SELECT u FROM Usuario u " +
             "JOIN u.rol r " +
-            "JOIN r.rolPermisos rp " +
-            "JOIN rp.permiso p " +
             "WHERE u.UEmail = :email " +
             "AND u.UFechaBaja IS NULL " +
             "AND r.RFechaBaja IS NULL " +
-            "AND rp.RPFechaHasta IS NULL " +
-            "AND p.PCodigo = 'iniciar_sesion' " +
-            "AND p.PFechaBaja IS NULL")
+            "AND EXISTS (SELECT 1 FROM RolPermiso rp " +
+            "            JOIN rp.permiso p " +
+            "            WHERE rp MEMBER OF r.rolPermisos " + // 🔥 CORREGIDO: 'MEMBER OF' en vez de 'IN'
+            "            AND p.PNombre = 'iniciar_sesion' " +
+            "            AND p.PFechaBaja IS NULL " +
+            "            AND rp.RPFechaHasta IS NULL)")
     Optional<Usuario> findByEmailActivoYConPermisoIniciarSesion(@Param("email") String email);
 }

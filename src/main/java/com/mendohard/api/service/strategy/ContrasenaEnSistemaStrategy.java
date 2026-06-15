@@ -39,4 +39,12 @@ public class ContrasenaEnSistemaStrategy implements ClaveStrategy {
         int saltNumerico = 100000 + random.nextInt(900000);
         return String.valueOf(saltNumerico);
     }
+
+    @Override
+    public boolean verificarContrasena(String contrasenaRaw, String contrasenaHasheada, String salt) {
+        String textoAHasher = contrasenaRaw + salt;
+        String hashIngresado = DigestUtils.md5DigestAsHex(textoAHasher.getBytes());
+        return contrasenaHasheada.equals(hashIngresado);
+    }
+
 }
