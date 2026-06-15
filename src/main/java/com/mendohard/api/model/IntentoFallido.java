@@ -20,13 +20,13 @@ public class IntentoFallido {
     private Long id;
 
     @Column(name = "if_codigo", nullable = false, unique = true)
-    private String codigo;
+    private String IFCodigo;
 
     @Column(name = "if_cantidad", nullable = false)
-    private int cantidad;
+    private int IFCantidad;
 
     @Column(name = "if_fecha", nullable = false)
-    private LocalDate fecha;
+    private LocalDate IFFecha;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)

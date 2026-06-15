@@ -15,11 +15,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             "JOIN u.rol r " +
             "JOIN r.rolPermisos rp " +
             "JOIN rp.permiso p " +
-            "WHERE u.email = :email " +
-            "AND u.fechaBaja IS NULL " +
-            "AND r.fechaBaja IS NULL " +
-            "AND rp.fechaHasta IS NULL " +
-            "AND p.codigo = 'iniciar_sesion' " +
-            "AND p.fechaBaja IS NULL")
+            "WHERE u.UEmail = :email " +
+            "AND u.UFechaBaja IS NULL " +
+            "AND r.RFechaBaja IS NULL " +
+            "AND rp.RPFechaHasta IS NULL " +
+            "AND p.PCodigo = 'iniciar_sesion' " +
+            "AND p.PFechaBaja IS NULL")
     Optional<Usuario> findByEmailActivoYConPermisoIniciarSesion(@Param("email") String email);
 }

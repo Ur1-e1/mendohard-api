@@ -21,19 +21,19 @@ public class Rol {
     private Long id;
 
     @Column(name = "r_codigo", nullable = false, unique = true)
-    private String codigo;
+    private String RCodigo;
 
     @Column(name = "r_nombre", nullable = false)
-    private String nombre;
+    private String RNombre;
 
     @Column(name = "r_descripcion")
-    private String descripcion;
+    private String RDescripcion;
 
     @Column(name = "r_fecha_alta", nullable = false)
-    private LocalDate fechaAlta;
+    private LocalDate RFechaAlta;
 
     @Column(name = "r_fecha_baja")
-    private LocalDate fechaBaja;
+    private LocalDate RFechaBaja;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "rol_id")

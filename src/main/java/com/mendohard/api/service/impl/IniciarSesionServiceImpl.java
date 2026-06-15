@@ -61,16 +61,16 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
                 .findByUsuarioIdAndFecha(usuario.getId(), hoy)
                 .orElseGet(() -> {
                     IntentoFallido nuevoIntento = IntentoFallido.builder()
-                            .codigo("IF-" + usuario.getId() + "-" + System.currentTimeMillis())
-                            .cantidad(0)
-                            .fecha(hoy)
+                            .IFCodigo("IF-" + usuario.getId() + "-" + System.currentTimeMillis())
+                            .IFCantidad(0)
+                            .IFFecha(hoy)
                             .usuario(usuario)
                             .build();
                     return intentoFallidoRepository.save(nuevoIntento);
                 });
 
         // Comprobar que IFCantidad < 10
-        if (intentoFallido.getCantidad() >= 10) {
+        if (intentoFallido.getIFCantidad() >= 10) {
             log.warn("Intentos máximos alcanzados para el usuario ID: {}", usuario.getId());
             throw new IntentosMaximosException("Intentos máximos de iniciar secion alcanzado");
         }
@@ -82,35 +82,35 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
                     return new IniciarSesionException("Email o contraseña no validos");
                 });
 
-        String textoAHasher = request.getContraseña() + clave.getSalt();
+        String textoAHasher = request.getContraseña() + clave.getCSalt();
         // Convertimos la concatenación en un hash MD5 real en formato Hexadecimal
         String contraseñaIngresadaHash = DigestUtils.md5DigestAsHex(textoAHasher.getBytes());
 
-        boolean contraseñaValida = clave.getContraseña().equals(contraseñaIngresadaHash);
+        boolean contraseñaValida = clave.getCContrasena().equals(contraseñaIngresadaHash);
 
         // e) Si la contraseña NO coincide (Camino Alternativo N°2)
         if (!contraseñaValida) {
             log.warn("Contraseña no válida para el usuario ID: {}", usuario.getId());
 
             // Incrementamos y persistimos el atributo IFCantidad
-            intentoFallido.setCantidad(intentoFallido.getCantidad() + 1);
+            intentoFallido.setIFCantidad(intentoFallido.getIFCantidad() + 1);
             com.mendohard.api.model.IntentoFallido guardado = intentoFallidoRepository.save(intentoFallido);
 
             // Pasamos el mensaje de la especificación y el valor de su atributo 'cantidad'
-            throw new IniciarSesionException("Contraseña no valida", guardado.getCantidad());
+            throw new IniciarSesionException("Contraseña no valida", guardado.getIFCantidad());
         }
 
         // f) Si la contraseña COINCIDE - Enrutamiento final por rol
-        String redireccionHome = determinarRedireccion(usuario.getRol().getNombre());
-        log.info("Autenticación exitosa. Generando Token de acceso para '{}'", usuario.getEmail());
+        String redireccionHome = determinarRedireccion(usuario.getRol().getRNombre());
+        log.info("Autenticación exitosa. Generando Token de acceso para '{}'", usuario.getUEmail());
 
         // Generamos el token de forma segura
-        String tokenGenerado = jwtUtil.generarToken(usuario.getEmail(), usuario.getRol().getNombre());
+        String tokenGenerado = jwtUtil.generarToken(usuario.getUEmail(), usuario.getRol().getRNombre());
 
         return IniciarSesionResponseDTO.builder()
-                .email(usuario.getEmail())
-                .rolNombre(usuario.getRol().getNombre())
-                .nombreCompleto(usuario.getNombre() + " " + usuario.getApellido())
+                .email(usuario.getUEmail())
+                .rolNombre(usuario.getRol().getRNombre())
+                .nombreCompleto(usuario.getUNombre() + " " + usuario.getUApellido())
                 .redireccionHome(redireccionHome)
                 .token(tokenGenerado)
                 .build();

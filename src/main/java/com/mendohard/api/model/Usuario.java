@@ -23,22 +23,22 @@ public abstract class Usuario {
     private Long id;
 
     @Column(name = "u_codigo", nullable = false, unique = true)
-    private String codigo;
+    private String UCodigo;
 
     @Column(name = "u_nombre", nullable = false)
-    private String nombre;
+    private String UNombre;
 
     @Column(name = "u_apellido", nullable = false)
-    private String apellido;
+    private String UApellido;
 
     @Column(name = "u_email", nullable = false)
-    private String email;
+    private String UEmail;
 
     @Column(name = "u_fecha_alta", nullable = false)
-    private LocalDate fechaAlta;
+    private LocalDate UFechaAlta;
 
     @Column(name = "u_fecha_baja")
-    private LocalDate fechaBaja;
+    private LocalDate UFechaBaja;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "algoritmo_clave_id", nullable = false)

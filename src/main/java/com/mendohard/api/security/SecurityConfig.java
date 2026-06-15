@@ -1,7 +1,6 @@
 package com.mendohard.api.security;
 
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,18 +29,19 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                // Cambiamos la política a STATELESS. La API ya no guarda sesiones en memoria server-side, usa tokens.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/iniciar-sesion").permitAll() // Público
-                        .requestMatchers("/h2-console/**").permitAll() // Desarrollo
-                        .requestMatchers("/swagger-ui.html", "/v3/api-docs", "/swagger-ui/**").permitAll() // Docs
-                        .anyRequest().authenticated() // Candado para TODO lo demás que crees a partir de ahora
+                        .requestMatchers("/api/auth/iniciar-sesion").permitAll()
+                        .requestMatchers("/api/v1/auth/registro/consumidor").permitAll()
+                        .requestMatchers("/api/v1/auth/registro/vendedor").permitAll()
+                        .requestMatchers("/api/v1/auth/registro/vendedor/ubicaciones").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/v3/api-docs", "/swagger-ui/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .formLogin(AbstractHttpConfigurer::disable);
 
-        // 💡 CLAVE: Le decimos a Spring que ejecute nuestro filtro JWT antes del filtro de login por defecto
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

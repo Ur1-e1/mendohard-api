@@ -20,13 +20,13 @@ public class Clave {
     private Long id;
 
     @Column(name = "c_codigo", nullable = false, unique = true)
-    private String codigo;
+    private String CCodigo;
 
     @Column(name = "c_contrasena", nullable = false)
-    private String contraseña;
+    private String CContrasena;
 
     @Column(name = "c_salt", nullable = false)
-    private String salt;
+    private String CSalt;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false, unique = true)
