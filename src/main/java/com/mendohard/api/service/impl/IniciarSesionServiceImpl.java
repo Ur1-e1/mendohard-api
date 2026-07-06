@@ -14,8 +14,9 @@ import com.mendohard.api.repository.UsuarioRepository;
 import com.mendohard.api.security.JwtUtil;
 import com.mendohard.api.service.IniciarSesionService;
 import com.mendohard.api.service.strategy.ClaveStrategy;
-import com.mendohard.api.service.factory.ClaveStrategyFactory; // Inyectado
+import com.mendohard.api.service.factory.ClaveStrategyFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,28 +32,33 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
     private final ClaveRepository claveRepository;
     private final IntentoFallidoRepository intentoFallidoRepository;
     private final JwtUtil jwtUtil;
-    private final ClaveStrategyFactory claveStrategyFactory; // 🔥 Inyectado para desacoplamiento
+    private final ClaveStrategyFactory claveStrategyFactory;
+
+
+    @Value("${mendohard.business.max-login-attempts}")
+    private int maxLoginAttempts;
+
 
     @Override
     @Transactional(noRollbackFor = IniciarSesionException.class)
     public IniciarSesionResponseDTO procesarIngreso(IniciarSesionRequestDTO request) {
         log.info("Iniciando proceso de ingreso para email: {}", request.getEmail());
 
-        // a) Controlar consistencia de datos ingresados
+        //  Controlar consistencia de datos ingresados
         if (request.getEmail() == null || request.getEmail().isBlank() ||
                 request.getContraseña() == null || request.getContraseña().isBlank()) {
             log.warn("Email o contraseña vacíos en los parámetros");
             throw new IniciarSesionException("Email o contraseña no validos");
         }
 
-        // b) Buscar Usuario activo por email con validación de precondiciones
+        // Buscar Usuario activo por email con validación de precondiciones
         Usuario usuario = usuarioRepository.findByEmailActivoYConPermisoIniciarSesion(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Usuario no encontrado, inactivo o no posee permiso 'iniciar_sesion' activo: {}", request.getEmail());
                     return new IniciarSesionException("Email o contraseña no validos");
                 });
 
-        // c) Lógica de Intentos Máximos
+        // Lógica de Intentos Máximos
         LocalDate hoy = LocalDate.now();
         IntentoFallido intentoFallido = intentoFallidoRepository
                 .findByUsuarioIdAndFecha(usuario.getId(), hoy)
@@ -66,23 +72,23 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
                     return intentoFallidoRepository.save(nuevoIntento);
                 });
 
-        if (intentoFallido.getIFCantidad() >= 10) {
+        if (intentoFallido.getIFCantidad() >= maxLoginAttempts) {
             log.warn("Intentos máximos alcanzados para el usuario ID: {}", usuario.getId());
             throw new IntentosMaximosException("Intentos máximos de iniciar secion alcanzado");
         }
 
-        // d) Comprobar clave
+        //  Comprobar clave
         Clave clave = claveRepository.findByUsuarioId(usuario.getId())
                 .orElseThrow(() -> {
                     log.error("Consistencia RDBM rota: El usuario ID {} no posee entidad Clave asociada", usuario.getId());
                     return new IniciarSesionException("Email o contraseña no validos");
                 });
 
-        // 🔥 APLICACIÓN DEL PATRÓN STRATEGY DELEGADO
+        //  APLICACIÓN DEL PATRÓN STRATEGY DELEGADO
         ClaveStrategy strategy = claveStrategyFactory.getStrategy(usuario.getAlgoritmoClave().getACNombre());
         boolean contraseñaValida = strategy.verificarContrasena(request.getContraseña(), clave.getCContrasena(), clave.getCSalt());
 
-        // e) Si la contraseña NO coincide (Camino Alternativo N°2)
+        // Si la contraseña NO coincide (Camino Alternativo N°2)
         if (!contraseñaValida) {
             log.warn("Contraseña no válida para el usuario ID: {}", usuario.getId());
 
@@ -92,7 +98,7 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
             throw new IniciarSesionException("Contraseña no valida", guardado.getIFCantidad());
         }
 
-        // f) Si la contraseña COINCIDE - Enrutamiento final por rol
+        // Si la contraseña COINCIDE - Enrutamiento final por rol
         String redireccionHome = determinarRedireccion(usuario.getRol().getRNombre());
         log.info("Autenticación exitosa. Generando Token de acceso para '{}'", usuario.getUEmail());
 

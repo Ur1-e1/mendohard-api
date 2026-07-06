@@ -80,4 +80,44 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+
+    @ExceptionHandler(AccesoDenegadoException.class)
+    public ResponseEntity<Map<String, Object>> handleAccesoDenegadoException(AccesoDenegadoException ex) {
+        log.error("AccesoDenegadoException: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+        response.put("codigo", 403); // Forbidden
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    @ExceptionHandler(ContrasennaNoCoincideException.class)
+    public ResponseEntity<Map<String, Object>> handleContrasennaNoCoincideException(ContrasennaNoCoincideException ex) {
+        log.error("ContrasennaNoCoincideException: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        // El caso de uso especifica mostrar el mensaje: "Contraseña no igual a confirmación contraseña"
+        response.put("mensaje", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+        response.put("codigo", 400);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(UsuarioYaExisteException.class)
+    public ResponseEntity<Map<String, Object>> handleUsuarioYaExisteException(UsuarioYaExisteException ex) {
+        log.error("UsuarioYaExisteException: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        // El caso de uso especifica mostrar el mensaje: "Ya existe este usuario"
+        response.put("mensaje", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+        response.put("codigo", 400);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+
 }

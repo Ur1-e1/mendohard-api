@@ -34,8 +34,10 @@ public class RegistroServiceImpl implements RegistroService {
     private final EstadoComercioRepository estadoComercioRepository;
     private final VendedorEstadoRepository vendedorEstadoRepository;
     private final ComercioEstadoRepository comercioEstadoRepository;
-    private final AlgoritmoClaveRepository algoritmoClaveRepository; // Inyectado
-    private final ClaveStrategyFactory claveStrategyFactory; // Inyectado
+    private final AlgoritmoClaveRepository algoritmoClaveRepository;
+    private final ClaveStrategyFactory claveStrategyFactory;
+
+    private final RolRepository rolRepository;
 
     @Override
     public List<UbicacionesVendedorDTO> obtenerUbicacionesVendedor() {
@@ -72,11 +74,11 @@ public class RegistroServiceImpl implements RegistroService {
         validarUnicidadConsumidor(request.getUEmail(), request.getCApodo());
 
         // Cargamos el algoritmo real de la base de datos para conocer su nombre maestro
-        AlgoritmoClave algoritmoClave = algoritmoClaveRepository.findById(1L)
+        AlgoritmoClave algoritmoClave = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
                 .orElseThrow(() -> new RegistroException("Algoritmo de clave base no configurado en el sistema"));
 
-        Rol rol = new Rol();
-        rol.setId(3L);
+        Rol rol = rolRepository.findByRNombreActivo("Consumidor")
+                .orElseThrow(() -> new RegistroException("Rol 'Consumidor' no encontrado en el sistema"));
 
         Consumidor consumidor = Consumidor.builder()
                 .UNombre(request.getUNombre())
@@ -129,11 +131,11 @@ public class RegistroServiceImpl implements RegistroService {
                 .orElseThrow(() -> new RegistroException("Estado 'ComercioPendiente' no encontrado"));
 
         // Cargamos el algoritmo real de la base de datos para conocer su nombre maestro
-        AlgoritmoClave algoritmoClave = algoritmoClaveRepository.findById(1L)
+        AlgoritmoClave algoritmoClave = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
                 .orElseThrow(() -> new RegistroException("Algoritmo de clave base no configurado en el sistema"));
 
-        Rol rol = new Rol();
-        rol.setId(2L);
+        Rol rol = rolRepository.findByRNombreActivo("Vendedor")
+                .orElseThrow(() -> new RegistroException("Rol 'Vendedor' no encontrado en el sistema"));
 
         Vendedor vendedor = Vendedor.builder()
                 .UNombre(request.getUNombre())

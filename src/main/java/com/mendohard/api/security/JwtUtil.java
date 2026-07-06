@@ -2,6 +2,7 @@ package com.mendohard.api.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -14,22 +15,27 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET_KEY_STRING = "MendoHardSecretKey2026MendoHardSecretKey2026MendoHard";
-    // En 0.12.x se utiliza la interfaz nativa SecretKey
-    private final SecretKey SECRET_KEY = io.jsonwebtoken.security.Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes(StandardCharsets.UTF_8));
+    private final SecretKey secretKey;
+    private final long expirationTime;
 
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 horas
+    // Los valores se inyectan dinámicamente desde el archivo properties al instanciarse el componente
+    public JwtUtil(
+            @Value("${mendohard.security.jwt.secret}") String secretKeyString,
+            @Value("${mendohard.security.jwt.expiration-ms}") long expirationTime) {
+        this.secretKey = io.jsonwebtoken.security.Keys.hmacShaKeyFor(secretKeyString.getBytes(StandardCharsets.UTF_8));
+        this.expirationTime = expirationTime;
+    }
 
     public String generarToken(String email, String rol) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
 
         return Jwts.builder()
-                .claims(claims) // Cambiado: antes setClaims()
-                .subject(email) // Cambiado: antes setSubject()
+                .claims(claims)
+                .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRET_KEY) // El algoritmo se autodetecta según el tipo de clave
+                .expiration(new Date(System.currentTimeMillis() + expirationTime)) // Usa la variable inyectada
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -58,7 +64,7 @@ public class JwtUtil {
 
     private Claims extraerTodosLosClaims(String token) {
         return Jwts.parser() // Cambiado: antes parserBuilder()
-                .verifyWith(SECRET_KEY) // Cambiado: antes setSigningKey()
+                .verifyWith(secretKey) // Cambiado: antes setSigningKey()
                 .build()
                 .parseSignedClaims(token) // Cambiado: antes parseClaimsJws()
                 .getPayload(); // Cambiado: antes getBody()
