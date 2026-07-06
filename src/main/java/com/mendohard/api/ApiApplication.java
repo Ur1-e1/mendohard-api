@@ -9,11 +9,7 @@ public class ApiApplication {
 	public static void main(String[] args) {
 
 		SpringApplication.run(ApiApplication.class, args);
-
-		System.out.println("API is running...---------------------");
-
-
+		System.out.println("API esta funcionando...---------------------");
 
 	}
-
 }
