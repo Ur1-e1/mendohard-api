@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class ResponsableMendoHardServiceImpl implements ResponsableMendoHardService {
@@ -61,13 +62,26 @@ public class ResponsableMendoHardServiceImpl implements ResponsableMendoHardServ
 
         // CA N°2: Contraseña no igual a confirmación contraseña
         if (!request.contrasenna().equals(request.confirmacionContrasenna())) {
-            throw new ContrasennaNoCoincideException("La contraseña no coincide con la confirmación.");
+            throw new ContrasennaNoCoincideException(
+                    "La contraseña no coincide con la confirmación.",
+                    List.of("contrasenna", "confirmacionContrasenna")
+            );
         }
 
+        // CA N°3: Duplicidad por Email — se valida de forma separada para indicar el campo exacto
+        if (usuarioRepository.existsByUEmailActivo(request.uEmail())) {
+            throw new UsuarioYaExisteException(
+                    "Ya existe un usuario registrado con el email ingresado",
+                    List.of("uEmail")
+            );
+        }
 
-        if (usuarioRepository.existsByUEmailActivo(request.uEmail()) ||
-                usuarioRepository.existsByRMHLegajoActivo(request.rmhLegajo())) {
-            throw new UsuarioYaExisteException("Ya existe este usuario");
+        // CA N°3: Duplicidad por Legajo — se valida de forma separada para indicar el campo exacto
+        if (usuarioRepository.existsByRMHLegajoActivo(request.rmhLegajo())) {
+            throw new UsuarioYaExisteException(
+                    "Ya existe un usuario registrado con el legajo ingresado",
+                    List.of("rmhLegajo")
+            );
         }
 
         // Buscar instancias activas de Rol y AlgoritmoClave

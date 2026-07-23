@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -44,12 +45,9 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
     public IniciarSesionResponseDTO procesarIngreso(IniciarSesionRequestDTO request) {
         log.info("Iniciando proceso de ingreso para email: {}", request.getEmail());
 
-        //  Controlar consistencia de datos ingresados
-        if (request.getEmail() == null || request.getEmail().isBlank() ||
-                request.getContraseña() == null || request.getContraseña().isBlank()) {
-            log.warn("Email o contraseña vacíos en los parámetros");
-            throw new IniciarSesionException("Email o contraseña no validos");
-        }
+        // CA N°1: La validación de campos nulos/vacíos es delegada al framework
+        // mediante las anotaciones @NotBlank y @Email del IniciarSesionRequestDTO.
+        // Si el request llega aquí, los campos ya son válidos sintácticamente.
 
         // Buscar Usuario activo por email con validación de precondiciones
         Usuario usuario = usuarioRepository.findByEmailActivoYConPermisoIniciarSesion(request.getEmail())
@@ -88,14 +86,19 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
         ClaveStrategy strategy = claveStrategyFactory.getStrategy(usuario.getAlgoritmoClave().getACNombre());
         boolean contraseñaValida = strategy.verificarContrasena(request.getContraseña(), clave.getCContrasena(), clave.getCSalt());
 
-        // Si la contraseña NO coincide (Camino Alternativo N°2)
+        // CA N°2: Si la contraseña NO coincide (Camino Alternativo N°2)
         if (!contraseñaValida) {
             log.warn("Contraseña no válida para el usuario ID: {}", usuario.getId());
 
             intentoFallido.setIFCantidad(intentoFallido.getIFCantidad() + 1);
             com.mendohard.api.model.IntentoFallido guardado = intentoFallidoRepository.save(intentoFallido);
 
-            throw new IniciarSesionException("Contraseña no valida", guardado.getIFCantidad());
+            // Lanza IniciarSesionException con el campo afectado y la cantidad actualizada de intentos
+            throw new IniciarSesionException(
+                    "Contraseña no valida",
+                    List.of("contraseña"),
+                    guardado.getIFCantidad()
+            );
         }
 
         // Si la contraseña COINCIDE - Enrutamiento final por rol
