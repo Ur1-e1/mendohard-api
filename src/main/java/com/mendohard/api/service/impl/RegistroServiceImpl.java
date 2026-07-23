@@ -5,7 +5,9 @@ import com.mendohard.api.dto.RegistroConsumidorRequestDTO;
 import com.mendohard.api.dto.RegistroResponseDTO;
 import com.mendohard.api.dto.RegistroVendedorRequestDTO;
 import com.mendohard.api.dto.UbicacionesVendedorDTO;
+import com.mendohard.api.exception.ContrasennaNoCoincideException;
 import com.mendohard.api.exception.RegistroException;
+import com.mendohard.api.exception.UsuarioYaExisteException;
 import com.mendohard.api.model.*;
 import com.mendohard.api.repository.*;
 import com.mendohard.api.service.RegistroService;
@@ -227,33 +229,71 @@ public class RegistroServiceImpl implements RegistroService {
                 .build();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Métodos de validación de negocio — CU-02
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * CA N°2 de CU-02 (Consumidor): contraseña no coincide con confirmación.
+     * Lanza ContrasennaNoCoincideException indicando los campos exactos del DTO.
+     */
     private void validarContraseñasConsumidorCoincidan(String contrasena, String confirmacion) {
         if (!contrasena.equals(confirmacion)) {
-            throw new RegistroException("No coincide la contraseña con la confirmación de contraseña");
+            throw new ContrasennaNoCoincideException(
+                    "La contraseña no coincide con la confirmación de contraseña",
+                    List.of("Contrasena", "ConfirmacionContrasena")
+            );
         }
     }
 
+    /**
+     * CA N°2 de CU-02 (Vendedor): contraseña no coincide con confirmación.
+     * Lanza ContrasennaNoCoincideException indicando los campos exactos del DTO.
+     */
     private void validarContraseñasVendedorCoincidan(String contrasena, String confirmacion) {
         if (!contrasena.equals(confirmacion)) {
-            throw new RegistroException("La contraseña ingresada es distinta a la confirmación de la contraseña");
+            throw new ContrasennaNoCoincideException(
+                    "La contraseña ingresada es distinta a la confirmación de la contraseña",
+                    List.of("Contrasena", "ConfirmacionContrasena")
+            );
         }
     }
 
+    /**
+     * CA N°3/8 de CU-02 (Consumidor): duplicidad de Email o Apodo.
+     * Lanza UsuarioYaExisteException indicando el campo duplicado exacto.
+     */
     private void validarUnicidadConsumidor(String email, String apodo) {
         if (consumidorRepository.findByEmailActivo(email).isPresent()) {
-            throw new RegistroException("Ya existe un Consumidor registrado con el mismo Email o Apodo, cambiarlo");
+            throw new UsuarioYaExisteException(
+                    "Ya existe un Consumidor registrado con el mismo Email o Apodo, cambiarlo",
+                    List.of("UEmail")
+            );
         }
         if (consumidorRepository.findByApodoActivo(apodo).isPresent()) {
-            throw new RegistroException("Ya existe un Consumidor registrado con el mismo Email o Apodo, cambiarlo");
+            throw new UsuarioYaExisteException(
+                    "Ya existe un Consumidor registrado con el mismo Email o Apodo, cambiarlo",
+                    List.of("CApodo")
+            );
         }
     }
 
+    /**
+     * CA N°3 de CU-02 (Vendedor): duplicidad de Email o CUIT.
+     * Lanza UsuarioYaExisteException indicando el campo duplicado exacto.
+     */
     private void validarUnicidadVendedor(String email, String cuit) {
         if (vendedorRepository.findByEmailActivo(email).isPresent()) {
-            throw new RegistroException("Ya existe un comercio registrado con los datos ingresados");
+            throw new UsuarioYaExisteException(
+                    "Ya existe un comercio registrado con los datos ingresados",
+                    List.of("UEmail")
+            );
         }
         if (vendedorRepository.findByCuitActivo(cuit).isPresent()) {
-            throw new RegistroException("Ya existe un comercio registrado con los datos ingresados");
+            throw new UsuarioYaExisteException(
+                    "Ya existe un comercio registrado con los datos ingresados",
+                    List.of("VCuit")
+            );
         }
     }
 }
