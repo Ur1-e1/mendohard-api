@@ -4,6 +4,7 @@ package com.mendohard.api.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -107,6 +108,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(buildResponse("ACCESS_DENIED", "No posee permisos para ejecutar esta acción", 403, List.of(), null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // F2. Acceso Denegado por Spring Security (AccessDeniedException)
+    //     Cubre: @PreAuthorize fallido, hasRole/hasAnyRole en reglas de URL
+    //     cuando la excepción escala hasta el ControllerAdvice.
+    //     errorCode: ACCESS_DENIED | status: 403
+    // ─────────────────────────────────────────────────────────────────────────
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleSpringAccessDeniedException(AccessDeniedException ex) {
+        log.warn("AccessDeniedException (Spring Security): {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(buildResponse("ACCESS_DENIED",
+                        "Acceso denegado: No posee los permisos o roles requeridos para realizar esta acción.",
+                        403, List.of(), null));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

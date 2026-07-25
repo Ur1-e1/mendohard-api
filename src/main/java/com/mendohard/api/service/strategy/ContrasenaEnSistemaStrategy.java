@@ -1,5 +1,6 @@
 package com.mendohard.api.service.strategy;
 
+import com.mendohard.api.exception.RegistroException;
 import com.mendohard.api.model.Clave;
 import com.mendohard.api.model.Usuario;
 import com.mendohard.api.repository.ClaveRepository;
@@ -32,6 +33,28 @@ public class ContrasenaEnSistemaStrategy implements ClaveStrategy {
 
         claveRepository.save(clave);
         log.info("Clave guardada exitosamente usando estrategia 'ContraseñaEnSistema' (MD5) para usuario ID: {}", usuario.getId());
+    }
+
+    /**
+     * CU-04 — CA N°2/N°6: Modifica la clave existente del usuario.
+     * Recupera la entidad Clave, genera un nuevo salt numérico, recalcula el hash MD5
+     * y persiste los nuevos valores sobre la instancia ya existente.
+     */
+    @Override
+    public void modificarYGuardarClave(Usuario usuario, String nuevaContrasenaRaw) {
+        Clave claveExistente = claveRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new RegistroException(
+                        "No se encontró la clave para el usuario con ID: " + usuario.getId()));
+
+        String nuevoSalt = generarSalt();
+        String textoAHasher = nuevaContrasenaRaw + nuevoSalt;
+        String nuevaContrasenaCifrada = DigestUtils.md5DigestAsHex(textoAHasher.getBytes());
+
+        claveExistente.setCSalt(nuevoSalt);
+        claveExistente.setCContrasena(nuevaContrasenaCifrada);
+
+        claveRepository.save(claveExistente);
+        log.info("Clave actualizada exitosamente (MD5) para usuario ID: {}", usuario.getId());
     }
 
     private String generarSalt() {

@@ -4,6 +4,7 @@ package com.mendohard.api.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
@@ -37,10 +39,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/registro/vendedor/ubicaciones").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/v3/api-docs", "/swagger-ui/**").permitAll()
+                        // CU-04: GET /api/perfil/me → Consumidor o Vendedor pueden consultar su perfil
+                        .requestMatchers(HttpMethod.GET, "/api/perfil/me").hasAnyRole("Consumidor", "Vendedor")
+                        // CU-04: PUT /api/perfil/consumidor → exclusivo del rol Consumidor
+                        .requestMatchers(HttpMethod.PUT, "/api/perfil/consumidor").hasRole("Consumidor")
+                        // CU-04: PUT /api/perfil/vendedor → exclusivo del rol Vendedor
+                        .requestMatchers(HttpMethod.PUT, "/api/perfil/vendedor").hasRole("Vendedor")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
-                .formLogin(AbstractHttpConfigurer::disable);
+                .formLogin(AbstractHttpConfigurer::disable)
+                // Registrar el handler custom para que los 403 del filtro usen el DTO estandarizado
+                .exceptionHandling(ex -> ex
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                );
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
