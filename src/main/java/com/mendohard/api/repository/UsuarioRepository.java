@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
@@ -46,5 +47,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT CASE WHEN COUNT(rmh) > 0 THEN true ELSE false END FROM ResponsableMendoHard rmh " +
             "WHERE rmh.UFechaBaja IS NULL AND rmh.RMHLegajo = :legajo")
     boolean existsByRMHLegajoActivo(@Param("legajo") String legajo);
+
+    // CU-04: Buscar usuario activo por email (para obtener perfil actual)
+    @Query("SELECT u FROM Usuario u WHERE u.UEmail = :email AND u.UFechaBaja IS NULL")
+    Optional<Usuario> findByUEmailAndUFechaBajaIsNull(@Param("email") String email);
+
+    // CU-04: Verificar unicidad de email en usuarios activos, excluyendo al propio usuario en sesión
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM Usuario u " +
+            "WHERE u.UFechaBaja IS NULL AND u.UEmail = :email AND u.id <> :id")
+    boolean existsByUEmailAndUFechaBajaIsNullAndIdNot(@Param("email") String email, @Param("id") Long id);
 
 }
