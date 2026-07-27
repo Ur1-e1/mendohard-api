@@ -154,6 +154,19 @@ public class GlobalExceptionHandler {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // J. CU-06 — Asignación RolPermiso ya existente → CA N°1
+    //    errorCode: ASIGNACION_EXISTENTE | status: 400
+    // ─────────────────────────────────────────────────────────────────────────
+    @ExceptionHandler(AsignacionExistenteException.class)
+    public ResponseEntity<Map<String, Object>> handleAsignacionExistenteException(AsignacionExistenteException ex) {
+        log.error("AsignacionExistenteException: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildResponse("ASIGNACION_EXISTENTE", ex.getMessage(), 400, List.of(), null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // G. Errores de sistema/infraestructura no controlados
     //    errorCode: INTERNAL_SERVER_ERROR | status: 500
     // ─────────────────────────────────────────────────────────────────────────
