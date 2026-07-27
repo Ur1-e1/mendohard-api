@@ -37,6 +37,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/registro/consumidor").permitAll()
                         .requestMatchers("/api/v1/auth/registro/vendedor").permitAll()
                         .requestMatchers("/api/v1/auth/registro/vendedor/ubicaciones").permitAll()
+                        // CU-05: Recuperar Credencial — endpoints públicos (usuario sin JWT activo)
+                        .requestMatchers("/api/v1/auth/recuperar-credencial/solicitar").permitAll()
+                        .requestMatchers("/api/v1/auth/recuperar-credencial/restablecer").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/v3/api-docs", "/swagger-ui/**").permitAll()
                         // CU-04: GET /api/perfil/me → Consumidor o Vendedor pueden consultar su perfil

@@ -50,8 +50,7 @@ public class ModificarPerfilServiceImpl implements ModificarPerfilService {
                     consumidor.getCApodo(),
                     consumidor.getUNombre(),
                     consumidor.getUApellido(),
-                    consumidor.getUEmail()
-            );
+                    consumidor.getUEmail());
         }
 
         if (usuario instanceof Vendedor vendedor) {
@@ -60,13 +59,14 @@ public class ModificarPerfilServiceImpl implements ModificarPerfilService {
                     vendedor.getVTelefono(),
                     vendedor.getUNombre(),
                     vendedor.getUApellido(),
-                    vendedor.getUEmail()
-            );
+                    vendedor.getUEmail());
         }
 
-        // Si la instancia no es Consumidor ni Vendedor (ej: ResponsableMendoHard), no aplica CU-04
+        // Si la instancia no es Consumidor ni Vendedor (ej: ResponsableMendoHard), no
+        // aplica CU-04
         throw new RegistroException(
-                "El tipo de usuario no soporta la operación de modificar perfil: " + usuario.getClass().getSimpleName());
+                "El tipo de usuario no soporta la operación de modificar perfil: "
+                        + usuario.getClass().getSimpleName());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -89,8 +89,7 @@ public class ModificarPerfilServiceImpl implements ModificarPerfilService {
                 log.warn("CU-04: Email '{}' ya existe en otro usuario activo", request.uemail());
                 throw new UsuarioYaExisteException(
                         "Ya existe un usuario con el email ingresado",
-                        List.of("uemail")
-                );
+                        List.of("uemail"));
             }
         }
 
@@ -100,8 +99,7 @@ public class ModificarPerfilServiceImpl implements ModificarPerfilService {
                 log.warn("CU-04: Apodo '{}' ya existe en otro consumidor activo", request.capodo());
                 throw new UsuarioYaExisteException(
                         "Ya existe un consumidor con ese apodo",
-                        List.of("capodo")
-                );
+                        List.of("capodo"));
             }
         }
 
@@ -144,8 +142,7 @@ public class ModificarPerfilServiceImpl implements ModificarPerfilService {
                 log.warn("CU-04: Email '{}' ya existe en otro usuario activo", request.uemail());
                 throw new UsuarioYaExisteException(
                         "Ya existe un usuario con el email ingresado",
-                        List.of("uemail")
-                );
+                        List.of("uemail"));
             }
         }
 

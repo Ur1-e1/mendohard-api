@@ -133,7 +133,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-005", "gestionar_productos",
                                                 "Permite cargar y editar productos propios"),
                                 buildPermiso("PERM-006", "modificar_perfil",
-                                                "Permite al usuario consultar y modificar su información de perfil"));
+                                                "Permite al usuario consultar y modificar su información de perfil"),
+                                buildPermiso("PERM-007", "recuperar_credencial",
+                                                "Permite recuperar la contraseña de acceso mediante un código OTP"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -166,6 +168,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pVerProductos = findPermiso(todos, "ver_productos");
                 Permiso pGestionarProductos = findPermiso(todos, "gestionar_productos");
                 Permiso pModificarPerfil = findPermiso(todos, "modificar_perfil");
+                Permiso pRecuperarCredencial = findPermiso(todos, "recuperar_credencial");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -177,7 +180,8 @@ public class DataSeeder implements CommandLineRunner {
                                 .rolPermisos(List.of(
                                                 buildRolPermiso(pIniciarSesion),
                                                 buildRolPermiso(pVerProductos),
-                                                buildRolPermiso(pModificarPerfil)))
+                                                buildRolPermiso(pModificarPerfil),
+                                                buildRolPermiso(pRecuperarCredencial)))
                                 .build();
 
                 // Rol Vendedor
@@ -191,7 +195,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pIniciarSesion),
                                                 buildRolPermiso(pVerProductos),
                                                 buildRolPermiso(pGestionarProductos),
-                                                buildRolPermiso(pModificarPerfil)))
+                                                buildRolPermiso(pModificarPerfil),
+                                                buildRolPermiso(pRecuperarCredencial)))
                                 .build();
 
                 // Rol Responsable MendoHard

@@ -128,6 +128,32 @@ public class GlobalExceptionHandler {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // H. CU-05 — Código OTP incorrecto → UI 03
+    //    errorCode: DATA_INCONSISTENCY | status: 400
+    // ─────────────────────────────────────────────────────────────────────────
+    @ExceptionHandler(DatosNoValidosException.class)
+    public ResponseEntity<Map<String, Object>> handleDatosNoValidosException(DatosNoValidosException ex) {
+        log.error("DatosNoValidosException: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildResponse("DATA_INCONSISTENCY", "Datos ingresados no válidos", 400, ex.getInvalidFields(), null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // I. CU-05 — Código OTP inexistente, expirado o intentos agotados → UI 18
+    //    errorCode: OTP_INVALID | status: 400
+    // ─────────────────────────────────────────────────────────────────────────
+    @ExceptionHandler(OtpException.class)
+    public ResponseEntity<Map<String, Object>> handleOtpException(OtpException ex) {
+        log.error("OtpException: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildResponse("OTP_INVALID", ex.getMessage(), 400, List.of(), null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // G. Errores de sistema/infraestructura no controlados
     //    errorCode: INTERNAL_SERVER_ERROR | status: 500
     // ─────────────────────────────────────────────────────────────────────────
