@@ -51,6 +51,8 @@ public class DataSeeder implements CommandLineRunner {
                 seedEstadosComercio();
                 seedUbicaciones();
                 seedAdminRMH();
+                seedConsumidor();
+                seedVendedorYComercio();
 
                 log.info("=== DataSeeder completado ===");
         }
@@ -242,9 +244,9 @@ public class DataSeeder implements CommandLineRunner {
                 }
                 List<EstadoVendedor> estados = List.of(
                                 buildEstadoVendedor("EV-001", "VendedorPendiente"),
-                                buildEstadoVendedor("EV-002", "VendedorActivo"),
+                                buildEstadoVendedor("EV-002", "VendedorAceptado"),
                                 buildEstadoVendedor("EV-003", "VendedorRechazado"),
-                                buildEstadoVendedor("EV-004", "VendedorSuspendido"));
+                                buildEstadoVendedor("EV-004", "VendedorInhabilitado"));
                 estadoVendedorRepository.saveAll(estados);
                 log.info("[DataSeeder] {} EstadosVendedor creados.", estados.size());
         }
@@ -265,9 +267,9 @@ public class DataSeeder implements CommandLineRunner {
                 }
                 List<EstadoComercio> estados = List.of(
                                 buildEstadoComercio("EC-001", "ComercioPendiente"),
-                                buildEstadoComercio("EC-002", "ComercioActivo"),
+                                buildEstadoComercio("EC-002", "ComercioAceptado"),
                                 buildEstadoComercio("EC-003", "ComercioRechazado"),
-                                buildEstadoComercio("EC-004", "ComercioSuspendido"));
+                                buildEstadoComercio("EC-004", "ComercioInhabilitado"));
                 estadoComercioRepository.saveAll(estados);
                 log.info("[DataSeeder] {} EstadosComercio creados.", estados.size());
         }
@@ -331,5 +333,117 @@ public class DataSeeder implements CommandLineRunner {
                                 .DFechaBaja(null)
                                 .provincia(provincia)
                                 .build();
+        }
+
+        // ─── USUARIOS DE PRUEBA (CONSUMIDOR Y VENDEDOR) ──────────────────────────────
+
+        private void seedConsumidor() {
+                if (usuarioRepository.existsByUEmailActivo("consumidor@mendohard.com")) {
+                        log.info("[DataSeeder] Consumidor ya existe, se omite.");
+                        return;
+                }
+
+                AlgoritmoClave algoritmo = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
+                                .orElseThrow(() -> new IllegalStateException("AlgoritmoClave no encontrado"));
+                Rol rolConsumidor = rolRepository.findByRNombreActivo("Consumidor")
+                                .orElseThrow(() -> new IllegalStateException("Rol Consumidor no encontrado"));
+
+                Consumidor consumidor = Consumidor.builder()
+                                .UCodigo("TEMP-C")
+                                .UNombre("Juan")
+                                .UApellido("Pérez")
+                                .UEmail("consumidor@mendohard.com")
+                                .CApodo("juancho_p")
+                                .UFechaAlta(LocalDate.now())
+                                .UFechaBaja(null)
+                                .rol(rolConsumidor)
+                                .algoritmoClave(algoritmo)
+                                .build();
+
+                consumidor = (Consumidor) usuarioRepository.save(consumidor);
+                consumidor.setUCodigo("CON-" + consumidor.getId());
+                usuarioRepository.save(consumidor);
+
+                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
+                strategy.generarYGuardarClave(consumidor, "consumidor1234");
+                log.info("[DataSeeder] Consumidor de prueba creado.");
+        }
+
+        private void seedVendedorYComercio() {
+                if (usuarioRepository.existsByUEmailActivo("vendedor@mendohard.com")) {
+                        log.info("[DataSeeder] Vendedor ya existe, se omite.");
+                        return;
+                }
+
+                AlgoritmoClave algoritmo = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
+                                .orElseThrow(() -> new IllegalStateException("AlgoritmoClave no encontrado"));
+                Rol rolVendedor = rolRepository.findByRNombreActivo("Vendedor")
+                                .orElseThrow(() -> new IllegalStateException("Rol Vendedor no encontrado"));
+
+                Vendedor vendedor = Vendedor.builder()
+                                .UCodigo("TEMP-V")
+                                .UNombre("María")
+                                .UApellido("Gómez")
+                                .UEmail("vendedor@mendohard.com")
+                                .VTelefono("2615551234")
+                                .VCuit("27301234567")
+                                .VRazonSocial("Mendoza Tech SRL")
+                                .VCategoriaFiscal("Responsable Inscripto")
+                                .UFechaAlta(LocalDate.now())
+                                .UFechaBaja(null)
+                                .rol(rolVendedor)
+                                .algoritmoClave(algoritmo)
+                                .build();
+
+                // Estado Vendedor
+                EstadoVendedor estadoAceptado = estadoVendedorRepository.findByNombreActivo("VendedorAceptado")
+                                .orElseThrow(() -> new IllegalStateException("Estado VendedorAceptado no encontrado"));
+                
+                VendedorEstado vendedorEstado = VendedorEstado.builder()
+                                .VEFechaDesde(LocalDate.now())
+                                .VEFechaHasta(null)
+                                .estadoVendedor(estadoAceptado)
+                                .build();
+                vendedor.setVendedorEstados(new java.util.ArrayList<>(List.of(vendedorEstado)));
+
+                // Comercio asociado
+                Departamento depto = departamentoRepository.findAll().stream().findFirst()
+                                .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
+                
+                EstadoComercio estadoComAceptado = estadoComercioRepository.findByNombreActivo("ComercioAceptado")
+                                .orElseThrow(() -> new IllegalStateException("Estado ComercioAceptado no encontrado"));
+                
+                ComercioEstado comercioEstado = ComercioEstado.builder()
+                                .CEFechaDesde(LocalDate.now())
+                                .CEFechaHasta(null)
+                                .estadoComercio(estadoComAceptado)
+                                .build();
+
+                Comercio comercio = Comercio.builder()
+                                .CCodigo("TEMP-COM")
+                                .CNombreFantasia("HardMza")
+                                .CTelefono("2614441122")
+                                .CLatitud(-32.89084f)
+                                .CLongitud(-68.82717f)
+                                .CDireccionCalle("San Martín")
+                                .CNumeroEnCalle("1020")
+                                .CFechaSolicitud(LocalDate.now())
+                                .CFechaAlta(LocalDate.now())
+                                .CFechaBaja(null)
+                                .CHorarioAtencion("L a V de 9 a 18")
+                                .departamento(depto)
+                                .comercioEstados(new java.util.ArrayList<>(List.of(comercioEstado)))
+                                .build();
+
+                vendedor.setComercios(new java.util.ArrayList<>(List.of(comercio)));
+
+                vendedor = (Vendedor) usuarioRepository.save(vendedor);
+                vendedor.setUCodigo("VEN-" + vendedor.getId());
+                vendedor.getComercios().get(0).setCCodigo("COM-" + vendedor.getComercios().get(0).getId());
+                usuarioRepository.save(vendedor);
+
+                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
+                strategy.generarYGuardarClave(vendedor, "vendedor1234");
+                log.info("[DataSeeder] Vendedor de prueba y su Comercio creados.");
         }
 }

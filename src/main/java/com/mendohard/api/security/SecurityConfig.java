@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/perfil/vendedor").hasRole("Vendedor")
                         // CU-06: Gestionar Roles → exclusivo del Responsable MendoHard
                         .requestMatchers("/api/v1/gestionar-roles/**").hasRole("Responsable MendoHard")
+                        // CU-07: Inhabilitar Usuario → exclusivo del Responsable MendoHard
+                        .requestMatchers("/api/v1/usuarios/inhabilitar/**").hasRole("Responsable MendoHard")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))

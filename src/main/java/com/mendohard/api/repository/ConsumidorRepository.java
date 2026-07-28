@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,4 +23,8 @@ public interface ConsumidorRepository extends JpaRepository<Consumidor, Long> {
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Consumidor c " +
             "WHERE c.UFechaBaja IS NULL AND c.CApodo = :apodo AND c.id <> :id")
     boolean existsByCApodoAndUFechaBajaIsNullAndIdNot(@Param("apodo") String apodo, @Param("id") Long id);
+
+    List<Consumidor> findByUFechaBajaIsNull();
+
+    Optional<Consumidor> findByUCodigoAndUFechaBajaIsNull(String uCodigo);
 }
