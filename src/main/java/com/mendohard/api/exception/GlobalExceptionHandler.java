@@ -137,7 +137,20 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(buildResponse("DATA_INCONSISTENCY", "Datos ingresados no válidos", 400, ex.getInvalidFields(), null));
+                .body(buildResponse("DATA_INCONSISTENCY", ex.getMessage(), 400, ex.getInvalidFields(), null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Recurso No Encontrado
+    // errorCode: RESOURCE_NOT_FOUND | status: 404
+    // ─────────────────────────────────────────────────────────────────────────
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        log.error("ResourceNotFoundException: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(buildResponse("RESOURCE_NOT_FOUND", ex.getMessage(), 404, ex.getInvalidFields(), null));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
