@@ -44,12 +44,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (jwtUtil.esTokenValido(jwt, email)) {
                 String rol = jwtUtil.extraerRol(jwt);
+                List<String> permisos = jwtUtil.extraerPermisos(jwt);
 
                 // Convertimos el rol en una autoridad entendible por Spring Security
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + rol);
+                java.util.List<org.springframework.security.core.GrantedAuthority> authorities = new java.util.ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + rol));
+
+                // Agregamos también los permisos como autoridades
+                if (permisos != null) {
+                    permisos.forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
+                }
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        email, null, List.of(authority)
+                        email, null, authorities
                 );
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
