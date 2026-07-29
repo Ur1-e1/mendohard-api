@@ -24,4 +24,8 @@ public interface VendedorRepository extends JpaRepository<Vendedor, Long> {
     List<Vendedor> findVendedoresAceptadosActivos();
 
     Optional<Vendedor> findByUCodigoAndUFechaBajaIsNull(String uCodigo);
+
+    @Query("SELECT v FROM Vendedor v JOIN v.vendedorEstados ve JOIN ve.estadoVendedor ev " +
+            "WHERE v.UFechaBaja IS NULL AND ve.VEFechaHasta IS NULL AND ev.EVNombre = 'VendedorPendiente' AND ev.EVFechaBaja IS NULL")
+    List<Vendedor> findVendedoresPendientes();
 }

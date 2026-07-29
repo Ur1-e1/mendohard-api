@@ -53,6 +53,7 @@ public class DataSeeder implements CommandLineRunner {
                 seedAdminRMH();
                 seedConsumidor();
                 seedVendedorYComercio();
+                seedVendedorPendienteYComercio();
 
                 log.info("=== DataSeeder completado ===");
         }
@@ -137,7 +138,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-006", "modificar_perfil",
                                                 "Permite al usuario consultar y modificar su información de perfil"),
                                 buildPermiso("PERM-007", "recuperar_credencial",
-                                                "Permite recuperar la contraseña de acceso mediante un código OTP"));
+                                                "Permite recuperar la contraseña de acceso mediante un código OTP"),
+                                buildPermiso("PERM-008", "validar_vendedor",
+                                                "Permite validar (aceptar o rechazar) a los vendedores pendientes"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -171,6 +174,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pGestionarProductos = findPermiso(todos, "gestionar_productos");
                 Permiso pModificarPerfil = findPermiso(todos, "modificar_perfil");
                 Permiso pRecuperarCredencial = findPermiso(todos, "recuperar_credencial");
+                Permiso pValidarVendedor = findPermiso(todos, "validar_vendedor");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -211,7 +215,8 @@ public class DataSeeder implements CommandLineRunner {
                                 .rolPermisos(List.of(
                                                 buildRolPermiso(pIniciarSesion),
                                                 buildRolPermiso(pRegistrarRmh),
-                                                buildRolPermiso(pGestionarComercios)))
+                                                buildRolPermiso(pGestionarComercios),
+                                                buildRolPermiso(pValidarVendedor)))
                                 .build();
 
                 rolRepository.saveAll(List.of(consumidor, vendedor, rmh));
@@ -445,5 +450,83 @@ public class DataSeeder implements CommandLineRunner {
                 ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
                 strategy.generarYGuardarClave(vendedor, "vendedor1234");
                 log.info("[DataSeeder] Vendedor de prueba y su Comercio creados.");
+        }
+
+        private void seedVendedorPendienteYComercio() {
+                if (usuarioRepository.existsByUEmailActivo("vendedor_pendiente@mendohard.com")) {
+                        log.info("[DataSeeder] Vendedor pendiente ya existe, se omite.");
+                        return;
+                }
+
+                AlgoritmoClave algoritmo = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
+                                .orElseThrow(() -> new IllegalStateException("AlgoritmoClave no encontrado"));
+                Rol rolVendedor = rolRepository.findByRNombreActivo("Vendedor")
+                                .orElseThrow(() -> new IllegalStateException("Rol Vendedor no encontrado"));
+
+                Vendedor vendedor = Vendedor.builder()
+                                .UCodigo("TEMP-VP")
+                                .UNombre("Carlos")
+                                .UApellido("Pendiente")
+                                .UEmail("vendedor_pendiente@mendohard.com")
+                                .VTelefono("2615559999")
+                                .VCuit("27309999999")
+                                .VRazonSocial("Pendiente Tech SRL")
+                                .VCategoriaFiscal("Responsable Inscripto")
+                                .UFechaAlta(LocalDate.now())
+                                .UFechaBaja(null)
+                                .rol(rolVendedor)
+                                .algoritmoClave(algoritmo)
+                                .build();
+
+                // Estado Vendedor
+                EstadoVendedor estadoPendiente = estadoVendedorRepository.findByNombreActivo("VendedorPendiente")
+                                .orElseThrow(() -> new IllegalStateException("Estado VendedorPendiente no encontrado"));
+                
+                VendedorEstado vendedorEstado = VendedorEstado.builder()
+                                .VEFechaDesde(LocalDate.now())
+                                .VEFechaHasta(null)
+                                .estadoVendedor(estadoPendiente)
+                                .build();
+                vendedor.setVendedorEstados(new java.util.ArrayList<>(List.of(vendedorEstado)));
+
+                // Comercio asociado
+                Departamento depto = departamentoRepository.findAll().stream().findFirst()
+                                .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
+                
+                EstadoComercio estadoComPendiente = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
+                                .orElseThrow(() -> new IllegalStateException("Estado ComercioPendiente no encontrado"));
+                
+                ComercioEstado comercioEstado = ComercioEstado.builder()
+                                .CEFechaDesde(LocalDate.now())
+                                .CEFechaHasta(null)
+                                .estadoComercio(estadoComPendiente)
+                                .build();
+
+                Comercio comercio = Comercio.builder()
+                                .CCodigo("TEMP-COMP")
+                                .CNombreFantasia("HardPendiente")
+                                .CTelefono("2614449999")
+                                .CLatitud(-32.89000f)
+                                .CLongitud(-68.82000f)
+                                .CDireccionCalle("San Martín")
+                                .CNumeroEnCalle("9999")
+                                .CFechaSolicitud(LocalDate.now())
+                                .CFechaAlta(null) // Todavía no aceptado
+                                .CFechaBaja(null)
+                                .CHorarioAtencion("L a V de 9 a 18")
+                                .departamento(depto)
+                                .comercioEstados(new java.util.ArrayList<>(List.of(comercioEstado)))
+                                .build();
+
+                vendedor.setComercios(new java.util.ArrayList<>(List.of(comercio)));
+
+                vendedor = (Vendedor) usuarioRepository.save(vendedor);
+                vendedor.setUCodigo("VEN-" + vendedor.getId());
+                vendedor.getComercios().get(0).setCCodigo("COM-" + vendedor.getComercios().get(0).getId());
+                usuarioRepository.save(vendedor);
+
+                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
+                strategy.generarYGuardarClave(vendedor, "vendedor1234");
+                log.info("[DataSeeder] Vendedor PENDIENTE de prueba y su Comercio creados.");
         }
 }
