@@ -28,4 +28,7 @@ public interface VendedorRepository extends JpaRepository<Vendedor, Long> {
     @Query("SELECT v FROM Vendedor v JOIN v.vendedorEstados ve JOIN ve.estadoVendedor ev " +
             "WHERE v.UFechaBaja IS NULL AND ve.VEFechaHasta IS NULL AND ev.EVNombre = 'VendedorPendiente' AND ev.EVFechaBaja IS NULL")
     List<Vendedor> findVendedoresPendientes();
+
+    @Query("SELECT v FROM Vendedor v JOIN v.comercios c WHERE c.id = :comercioId")
+    Optional<Vendedor> findByComercioId(@Param("comercioId") Long comercioId);
 }
