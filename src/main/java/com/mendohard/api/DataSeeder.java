@@ -143,7 +143,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-008", "validar_vendedor",
                                                 "Permite validar (aceptar o rechazar) a los vendedores pendientes"),
                                 buildPermiso("PERM-009", "validar_comercio",
-                                                "Permite validar (aceptar o rechazar) a los comercios pendientes"));
+                                                "Permite validar (aceptar o rechazar) a los comercios pendientes"),
+                                buildPermiso("PERM-010", "registrar_comercio",
+                                                "Permite registrar un nuevo comercio en la plataforma"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -179,6 +181,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pRecuperarCredencial = findPermiso(todos, "recuperar_credencial");
                 Permiso pValidarVendedor = findPermiso(todos, "validar_vendedor");
                 Permiso pValidarComercio = findPermiso(todos, "validar_comercio");
+                Permiso pRegistrarComercio = findPermiso(todos, "registrar_comercio");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -206,7 +209,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pVerProductos),
                                                 buildRolPermiso(pGestionarProductos),
                                                 buildRolPermiso(pModificarPerfil),
-                                                buildRolPermiso(pRecuperarCredencial)))
+                                                buildRolPermiso(pRecuperarCredencial),
+                                                buildRolPermiso(pRegistrarComercio)))
                                 .build();
 
                 // Rol Responsable MendoHard

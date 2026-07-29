@@ -26,9 +26,10 @@ public class JwtUtil {
         this.expirationTime = expirationTime;
     }
 
-    public String generarToken(String email, String rol) {
+    public String generarToken(String email, String rol, java.util.List<String> permisos) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
+        claims.put("permisos", permisos);
 
         return Jwts.builder()
                 .claims(claims)
@@ -37,6 +38,12 @@ public class JwtUtil {
                 .expiration(new Date(System.currentTimeMillis() + expirationTime)) // Usa la variable inyectada
                 .signWith(secretKey)
                 .compact();
+    }
+
+    @SuppressWarnings("unchecked")
+    public java.util.List<String> extraerPermisos(String token) {
+        final Claims claims = extraerTodosLosClaims(token);
+        return claims.get("permisos", java.util.List.class);
     }
 
     public String extraerEmail(String token) {

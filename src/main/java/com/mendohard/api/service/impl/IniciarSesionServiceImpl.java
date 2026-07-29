@@ -105,7 +105,15 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
         String redireccionHome = determinarRedireccion(usuario.getRol().getRNombre());
         log.info("Autenticación exitosa. Generando Token de acceso para '{}'", usuario.getUEmail());
 
-        String tokenGenerado = jwtUtil.generarToken(usuario.getUEmail(), usuario.getRol().getRNombre());
+        // Extraer permisos activos del Rol del Usuario
+        List<String> permisos = usuario.getRol().getRolPermisos().stream()
+                .filter(rp -> rp.getRPFechaHasta() == null)
+                .map(com.mendohard.api.model.RolPermiso::getPermiso)
+                .filter(p -> p.getPFechaBaja() == null)
+                .map(com.mendohard.api.model.Permiso::getPNombre)
+                .toList();
+
+        String tokenGenerado = jwtUtil.generarToken(usuario.getUEmail(), usuario.getRol().getRNombre(), permisos);
 
         return IniciarSesionResponseDTO.builder()
                 .email(usuario.getUEmail())
