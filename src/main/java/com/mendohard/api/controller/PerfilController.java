@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * CU-04 Modificar Perfil — Controller REST.
- *
- * <p>Rutas base: {@code /api/perfil}
- * <p>Precondición de autenticación: delegada a Spring Security (JwtAuthenticationFilter + SecurityConfig).
+ * <p>
+ * Precondición de autenticación: delegada a Spring Security
+ * (JwtAuthenticationFilter + SecurityConfig).
  * Solo usuarios con rol 'Consumidor' o 'Vendedor' acceden a estos endpoints.
  */
 @RestController
@@ -27,12 +27,14 @@ public class PerfilController {
     private final ModificarPerfilService modificarPerfilService;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GET /api/perfil/me — Pre-carga datos para UI 13 (Consumidor) y UI 14 (Vendedor)
+    // GET /api/perfil/me — Pre-carga datos para UI 13 (Consumidor) y UI 14
+    // (Vendedor)
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * Retorna el perfil actual del usuario autenticado.
-     * La respuesta varía según el tipo: {@code PerfilConsumidorResponseDTO} o {@code PerfilVendedorResponseDTO}.
+     * La respuesta varía según el tipo: {@code PerfilConsumidorResponseDTO} o
+     * {@code PerfilVendedorResponseDTO}.
      *
      * @return 200 OK con el DTO de perfil correspondiente.
      */
@@ -88,7 +90,8 @@ public class PerfilController {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Helper — Extrae el email (principal) del SecurityContext poblado por JwtAuthenticationFilter
+    // Helper — Extrae el email (principal) del SecurityContext poblado por
+    // JwtAuthenticationFilter
     // ─────────────────────────────────────────────────────────────────────────
 
     private String obtenerEmailDelContexto() {
