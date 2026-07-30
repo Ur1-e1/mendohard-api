@@ -5,6 +5,8 @@ import com.mendohard.api.repository.*;
 import com.mendohard.api.service.factory.ClaveStrategyFactory;
 import com.mendohard.api.service.strategy.ClaveStrategy;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -38,6 +40,8 @@ public class DataSeeder implements CommandLineRunner {
         private final DepartamentoRepository departamentoRepository;
         private final UsuarioRepository usuarioRepository;
         private final ClaveStrategyFactory claveStrategyFactory;
+        private final CategoriaRepository categoriaRepository;
+        private final ProductoRepository productoRepository;
 
         @Override
         @Transactional
@@ -55,6 +59,7 @@ public class DataSeeder implements CommandLineRunner {
                 seedVendedorYComercio();
                 seedVendedorPendienteYComercio();
                 seedVendedorAceptadoYComercioPendiente();
+                seedCategoriasYProductos();
 
                 log.info("=== DataSeeder completado ===");
         }
@@ -145,7 +150,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-009", "validar_comercio",
                                                 "Permite validar (aceptar o rechazar) a los comercios pendientes"),
                                 buildPermiso("PERM-010", "registrar_comercio",
-                                                "Permite registrar un nuevo comercio en la plataforma"));
+                                                "Permite registrar un nuevo comercio en la plataforma"),
+                                buildPermiso("PERM-011", "buscar_producto",
+                                                "Permite buscar productos por categoría"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -182,6 +189,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pValidarVendedor = findPermiso(todos, "validar_vendedor");
                 Permiso pValidarComercio = findPermiso(todos, "validar_comercio");
                 Permiso pRegistrarComercio = findPermiso(todos, "registrar_comercio");
+                Permiso pBuscarProducto = findPermiso(todos, "buscar_producto");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -194,7 +202,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pIniciarSesion),
                                                 buildRolPermiso(pVerProductos),
                                                 buildRolPermiso(pModificarPerfil),
-                                                buildRolPermiso(pRecuperarCredencial)))
+                                                buildRolPermiso(pRecuperarCredencial),
+                                                buildRolPermiso(pBuscarProducto)))
                                 .build();
 
                 // Rol Vendedor
@@ -537,6 +546,61 @@ public class DataSeeder implements CommandLineRunner {
                 ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
                 strategy.generarYGuardarClave(vendedor, "vendedor1234");
                 log.info("[DataSeeder] Vendedor PENDIENTE de prueba y su Comercio creados.");
+        }
+
+        private void seedCategoriasYProductos() {
+                if (categoriaRepository.count() > 0) {
+                        log.info("[DataSeeder] Categorías ya existen, se omiten.");
+                        return;
+                }
+
+                // Jerarquía de Categorías
+                Categoria hardware = Categoria.builder()
+                                .CCodigo("CAT-001")
+                                .CNombre("Hardware")
+                                .CFechaAlta(LocalDate.now())
+                                .build();
+                hardware = categoriaRepository.save(hardware);
+
+                Categoria memorias = Categoria.builder()
+                                .CCodigo("CAT-002")
+                                .CNombre("Memorias RAM")
+                                .categoriaPadre(hardware)
+                                .CFechaAlta(LocalDate.now())
+                                .build();
+                memorias = categoriaRepository.save(memorias);
+
+                Categoria desktopDimm = Categoria.builder()
+                                .CCodigo("CAT-003")
+                                .CNombre("Desktop (DIMM)")
+                                .categoriaPadre(memorias)
+                                .CFechaAlta(LocalDate.now())
+                                .build();
+                desktopDimm = categoriaRepository.save(desktopDimm);
+
+                // Productos
+                Producto ramActiva = Producto.builder()
+                                .PCodigo("PROD-001")
+                                .PNombreTecnico("Memoria RAM Kingston Fury Beast 16GB")
+                                .PEspecificaciones(Map.of("Tipo", "DDR4", "Capacidad", "16GB", "Velocidad", "3200MHz"))
+                                .PImagenUrl("https://example.com/ram-16gb.jpg")
+                                .PFechaAlta(LocalDate.now())
+                                .categoria(desktopDimm)
+                                .build();
+                productoRepository.save(ramActiva);
+
+                Producto ramInactiva = Producto.builder()
+                                .PCodigo("PROD-002")
+                                .PNombreTecnico("Memoria RAM Genérica 4GB (Descontinuada)")
+                                .PEspecificaciones(Map.of("Tipo", "DDR3", "Capacidad", "4GB"))
+                                .PImagenUrl("https://example.com/ram-4gb.jpg")
+                                .PFechaAlta(LocalDate.now().minusYears(1))
+                                .PFechaBaja(LocalDate.now())
+                                .categoria(desktopDimm)
+                                .build();
+                productoRepository.save(ramInactiva);
+
+                log.info("[DataSeeder] Categorías y Productos de prueba creados.");
         }
 
         private void seedVendedorAceptadoYComercioPendiente() {
