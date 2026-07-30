@@ -1,4 +1,4 @@
-package com.mendohard.api.service;
+package com.mendohard.api.service.impl;
 
 import com.mendohard.api.dto.CategoriaResponseDTO;
 import com.mendohard.api.dto.ProductoResponseDTO;
@@ -7,6 +7,7 @@ import com.mendohard.api.model.Categoria;
 import com.mendohard.api.model.Producto;
 import com.mendohard.api.repository.CategoriaRepository;
 import com.mendohard.api.repository.ProductoRepository;
+import com.mendohard.api.service.BuscarProductoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
