@@ -59,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/comercios/validar/**").hasRole("Responsable MendoHard")
                         // CU-10: Registrar Comercio → exclusivo de quien posea el permiso
                         .requestMatchers("/api/v1/comercios/**").hasAuthority("registrar_comercio")
+                        // CU-11: Buscar Producto
+                        .requestMatchers("/api/v1/productos-busqueda/**").hasAuthority("buscar_producto")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
