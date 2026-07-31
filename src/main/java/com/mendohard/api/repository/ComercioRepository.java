@@ -27,4 +27,6 @@ public interface ComercioRepository extends JpaRepository<Comercio, Long> {
            "AND v.UFechaBaja IS NULL " +
            "AND ve.VEFechaHasta IS NULL AND ev.EVNombre = 'VendedorAceptado' AND ev.EVFechaBaja IS NULL")
     List<Comercio> findComerciosPendientesDeVendedoresAceptados();
+
+    List<Comercio> findByCFechaBajaIsNullAndCFechaAltaIsNotNull();
 }
