@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * DataSeeder: Persiste los datos maestros necesarios para que la API funcione correctamente.
@@ -42,6 +43,8 @@ public class DataSeeder implements CommandLineRunner {
         private final ClaveStrategyFactory claveStrategyFactory;
         private final CategoriaRepository categoriaRepository;
         private final ProductoRepository productoRepository;
+        private final EstadoConsultaStockRepository estadoConsultaStockRepository;
+        private final NivelStockRepository nivelStockRepository;
 
         @Override
         @Transactional
@@ -60,6 +63,8 @@ public class DataSeeder implements CommandLineRunner {
                 seedVendedorPendienteYComercio();
                 seedVendedorAceptadoYComercioPendiente();
                 seedCategoriasYProductos();
+                seedEstadosConsultaStock();
+                seedNivelesStock();
 
                 log.info("=== DataSeeder completado ===");
         }
@@ -123,11 +128,14 @@ public class DataSeeder implements CommandLineRunner {
         // ─── PERMISOS ────────────────────────────────────────────────────────────────
 
         private void seedPermisos() {
-                // PermisoRepository no tiene query custom → usamos count() como guardia de
-                // idempotencia
                 if (permisoRepository.count() > 0) {
-                        log.info("[DataSeeder] Permisos ya existen ({} registros), se omiten.",
-                                        permisoRepository.count());
+                        // Agregar el nuevo permiso de stock de forma idempotente
+                        if (permisoRepository.findByPCodigoAndPFechaBajaIsNull("PERM-013").isEmpty()) {
+                                permisoRepository.save(buildPermiso("PERM-013", "consultar_stock",
+                                                "Permite consultar el stock de productos en los comercios"));
+                                log.info("[DataSeeder] Permiso consultar_stock (PERM-013) añadido independientemente.");
+                        }
+                        log.info("[DataSeeder] Permisos base ya existen, se omiten.");
                         return;
                 }
                 List<Permiso> permisos = List.of(
@@ -154,7 +162,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-011", "buscar_producto",
                                                 "Permite buscar productos por categoría"),
                                 buildPermiso("PERM-012", "abm_producto",
-                                                "Permite realizar el alta, baja y modificación de productos de hardware"));
+                                                "Permite realizar el alta, baja y modificación de productos de hardware"),
+                                buildPermiso("PERM-013", "consultar_stock",
+                                                "Permite consultar el stock de productos en los comercios"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -174,7 +184,21 @@ public class DataSeeder implements CommandLineRunner {
         private void seedRoles() {
                 // findByRNombreActivo ya existe en RolRepository
                 if (rolRepository.count() > 0) {
-                        log.info("[DataSeeder] Roles ya existen ({} registros), se omiten.", rolRepository.count());
+                        log.info("[DataSeeder] Roles ya existen ({} registros), verificando actualización.",
+                                        rolRepository.count());
+                        Optional<Rol> rolOpt = rolRepository.findByRNombreActivo("Consumidor");
+                        if (rolOpt.isPresent()) {
+                                Rol consumidor = rolOpt.get();
+                                boolean tienePermiso = consumidor.getRolPermisos().stream()
+                                                .anyMatch(rp -> "consultar_stock".equals(rp.getPermiso().getPNombre()));
+                                if (!tienePermiso) {
+                                        Permiso pConsultarStock = permisoRepository
+                                                        .findByPCodigoAndPFechaBajaIsNull("PERM-013").orElseThrow();
+                                        consumidor.getRolPermisos().add(buildRolPermiso(pConsultarStock));
+                                        rolRepository.save(consumidor);
+                                        log.info("[DataSeeder] Permiso consultar_stock añadido al rol Consumidor de forma idempotente.");
+                                }
+                        }
                         return;
                 }
 
@@ -193,6 +217,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pRegistrarComercio = findPermiso(todos, "registrar_comercio");
                 Permiso pBuscarProducto = findPermiso(todos, "buscar_producto");
                 Permiso pAbmProducto = findPermiso(todos, "abm_producto");
+                Permiso pConsultarStock = findPermiso(todos, "consultar_stock");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -206,7 +231,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pVerProductos),
                                                 buildRolPermiso(pModificarPerfil),
                                                 buildRolPermiso(pRecuperarCredencial),
-                                                buildRolPermiso(pBuscarProducto)))
+                                                buildRolPermiso(pBuscarProducto),
+                                                buildRolPermiso(pConsultarStock)))
                                 .build();
 
                 // Rol Vendedor
@@ -259,6 +285,44 @@ public class DataSeeder implements CommandLineRunner {
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException(
                                                 "Permiso '" + nombre + "' no encontrado durante el seeding de roles"));
+        }
+
+        private void seedEstadosConsultaStock() {
+                if (estadoConsultaStockRepository.count() > 0) {
+                        log.info("[DataSeeder] EstadosConsultaStock ya existen, se omiten.");
+                        return;
+                }
+                List<EstadoConsultaStock> estados = List.of(
+                                EstadoConsultaStock.builder().ECSCodigo("EC-001").ECSNombre("StockPendiente").build(),
+                                EstadoConsultaStock.builder().ECSCodigo("EC-002").ECSNombre("StockDisponible").build(),
+                                EstadoConsultaStock.builder().ECSCodigo("EC-003").ECSNombre("SinStock").build(),
+                                EstadoConsultaStock.builder().ECSCodigo("EC-004").ECSNombre("ConsultaExpirada")
+                                                .build());
+                estadoConsultaStockRepository.saveAll(estados);
+                log.info("[DataSeeder] {} EstadosConsultaStock creados.", estados.size());
+        }
+
+        private void seedNivelesStock() {
+                if (nivelStockRepository.count() > 0) {
+                        log.info("[DataSeeder] NivelesStock ya existen, se omiten.");
+                        return;
+                }
+                com.mendohard.api.model.Categoria categoria = categoriaRepository.findByCCodigo("CAT-003")
+                                .orElseThrow(() -> new IllegalStateException(
+                                                "Categoría 'Desktop (DIMM)' (CAT-003) no encontrada"));
+
+                List<NivelStock> niveles = List.of(
+                                NivelStock.builder().NSCodigo("NS-001").NSNombre("Stock Bajo").NSCantidadDesde(1)
+                                                .NSCantidadHasta(5).NSFechaAlta(LocalDate.now()).categoria(categoria)
+                                                .build(),
+                                NivelStock.builder().NSCodigo("NS-002").NSNombre("Stock Medio").NSCantidadDesde(6)
+                                                .NSCantidadHasta(15).NSFechaAlta(LocalDate.now()).categoria(categoria)
+                                                .build(),
+                                NivelStock.builder().NSCodigo("NS-003").NSNombre("Stock Alto").NSCantidadDesde(16)
+                                                .NSCantidadHasta(100).NSFechaAlta(LocalDate.now()).categoria(categoria)
+                                                .build());
+                nivelStockRepository.saveAll(niveles);
+                log.info("[DataSeeder] {} NivelesStock creados.", niveles.size());
         }
 
         // ─── ESTADOS ─────────────────────────────────────────────────────────────────
@@ -425,7 +489,7 @@ public class DataSeeder implements CommandLineRunner {
                 // Estado Vendedor
                 EstadoVendedor estadoAceptado = estadoVendedorRepository.findByNombreActivo("VendedorAceptado")
                                 .orElseThrow(() -> new IllegalStateException("Estado VendedorAceptado no encontrado"));
-                
+
                 VendedorEstado vendedorEstado = VendedorEstado.builder()
                                 .VEFechaDesde(LocalDate.now())
                                 .VEFechaHasta(null)
@@ -436,10 +500,10 @@ public class DataSeeder implements CommandLineRunner {
                 // Comercio asociado
                 Departamento depto = departamentoRepository.findAll().stream().findFirst()
                                 .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
-                
+
                 EstadoComercio estadoComAceptado = estadoComercioRepository.findByNombreActivo("ComercioAceptado")
                                 .orElseThrow(() -> new IllegalStateException("Estado ComercioAceptado no encontrado"));
-                
+
                 ComercioEstado comercioEstado = ComercioEstado.builder()
                                 .CEFechaDesde(LocalDate.now())
                                 .CEFechaHasta(null)
@@ -503,7 +567,7 @@ public class DataSeeder implements CommandLineRunner {
                 // Estado Vendedor
                 EstadoVendedor estadoPendiente = estadoVendedorRepository.findByNombreActivo("VendedorPendiente")
                                 .orElseThrow(() -> new IllegalStateException("Estado VendedorPendiente no encontrado"));
-                
+
                 VendedorEstado vendedorEstado = VendedorEstado.builder()
                                 .VEFechaDesde(LocalDate.now())
                                 .VEFechaHasta(null)
@@ -514,10 +578,10 @@ public class DataSeeder implements CommandLineRunner {
                 // Comercio asociado
                 Departamento depto = departamentoRepository.findAll().stream().findFirst()
                                 .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
-                
+
                 EstadoComercio estadoComPendiente = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
                                 .orElseThrow(() -> new IllegalStateException("Estado ComercioPendiente no encontrado"));
-                
+
                 ComercioEstado comercioEstado = ComercioEstado.builder()
                                 .CEFechaDesde(LocalDate.now())
                                 .CEFechaHasta(null)
@@ -636,7 +700,7 @@ public class DataSeeder implements CommandLineRunner {
                 // Estado Vendedor: Aceptado
                 EstadoVendedor estadoAceptado = estadoVendedorRepository.findByNombreActivo("VendedorAceptado")
                                 .orElseThrow(() -> new IllegalStateException("Estado VendedorAceptado no encontrado"));
-                
+
                 VendedorEstado vendedorEstado = VendedorEstado.builder()
                                 .VEFechaDesde(LocalDate.now())
                                 .VEFechaHasta(null)
@@ -647,10 +711,10 @@ public class DataSeeder implements CommandLineRunner {
                 // Comercio asociado: Pendiente
                 Departamento depto = departamentoRepository.findAll().stream().findFirst()
                                 .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
-                
+
                 EstadoComercio estadoComPendiente = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
                                 .orElseThrow(() -> new IllegalStateException("Estado ComercioPendiente no encontrado"));
-                
+
                 ComercioEstado comercioEstado = ComercioEstado.builder()
                                 .CEFechaDesde(LocalDate.now())
                                 .CEFechaHasta(null)

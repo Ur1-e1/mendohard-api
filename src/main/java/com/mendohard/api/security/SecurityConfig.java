@@ -66,6 +66,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/productos").hasAuthority("abm_producto")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/productos/**").hasAuthority("abm_producto")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/productos/**").hasAuthority("abm_producto")
+                        // CU-13: Consultar Stock
+                        .requestMatchers("/api/v1/consultas-stock/**").hasAuthority("consultar_stock")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
