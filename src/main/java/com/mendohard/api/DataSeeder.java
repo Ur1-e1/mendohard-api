@@ -152,7 +152,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-010", "registrar_comercio",
                                                 "Permite registrar un nuevo comercio en la plataforma"),
                                 buildPermiso("PERM-011", "buscar_producto",
-                                                "Permite buscar productos por categoría"));
+                                                "Permite buscar productos por categoría"),
+                                buildPermiso("PERM-012", "abm_producto",
+                                                "Permite realizar el alta, baja y modificación de productos de hardware"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -190,6 +192,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pValidarComercio = findPermiso(todos, "validar_comercio");
                 Permiso pRegistrarComercio = findPermiso(todos, "registrar_comercio");
                 Permiso pBuscarProducto = findPermiso(todos, "buscar_producto");
+                Permiso pAbmProducto = findPermiso(todos, "abm_producto");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -234,7 +237,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pRegistrarRmh),
                                                 buildRolPermiso(pGestionarComercios),
                                                 buildRolPermiso(pValidarVendedor),
-                                                buildRolPermiso(pValidarComercio)))
+                                                buildRolPermiso(pValidarComercio),
+                                                buildRolPermiso(pAbmProducto)))
                                 .build();
 
                 rolRepository.saveAll(List.of(consumidor, vendedor, rmh));

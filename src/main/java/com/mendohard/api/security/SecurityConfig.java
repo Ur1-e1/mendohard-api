@@ -61,6 +61,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/comercios/**").hasAuthority("registrar_comercio")
                         // CU-11: Buscar Producto
                         .requestMatchers("/api/v1/productos-busqueda/**").hasAuthority("buscar_producto")
+                        // CU-12: ABM Producto
+                        .requestMatchers(HttpMethod.GET, "/api/v1/productos/**").hasAuthority("abm_producto")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/productos").hasAuthority("abm_producto")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/productos/**").hasAuthority("abm_producto")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/productos/**").hasAuthority("abm_producto")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
