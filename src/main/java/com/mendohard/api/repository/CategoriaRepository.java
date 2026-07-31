@@ -18,4 +18,8 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
     // Buscar categoría por código de negocio y que esté activa
     Optional<Categoria> findByCCodigoAndCFechaBajaIsNull(String cCodigo);
+
+    // Obtener únicamente categorías activas que no tengan subcategorías activas (hojas)
+    @org.springframework.data.jpa.repository.Query("SELECT c FROM Categoria c WHERE c.CFechaBaja IS NULL AND NOT EXISTS (SELECT sub FROM Categoria sub WHERE sub.categoriaPadre = c AND sub.CFechaBaja IS NULL)")
+    List<Categoria> findCategoriasHojasActivas();
 }
