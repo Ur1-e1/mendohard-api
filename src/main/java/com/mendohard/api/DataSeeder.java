@@ -45,6 +45,8 @@ public class DataSeeder implements CommandLineRunner {
         private final ProductoRepository productoRepository;
         private final EstadoConsultaStockRepository estadoConsultaStockRepository;
         private final NivelStockRepository nivelStockRepository;
+        private final ConsultaStockRepository consultaStockRepository;
+        private final ComercioRepository comercioRepository;
 
         @Override
         @Transactional
@@ -65,6 +67,7 @@ public class DataSeeder implements CommandLineRunner {
                 seedCategoriasYProductos();
                 seedEstadosConsultaStock();
                 seedNivelesStock();
+                seedConsultasStock();
 
                 log.info("=== DataSeeder completado ===");
         }
@@ -135,6 +138,11 @@ public class DataSeeder implements CommandLineRunner {
                                                 "Permite consultar el stock de productos en los comercios"));
                                 log.info("[DataSeeder] Permiso consultar_stock (PERM-013) añadido independientemente.");
                         }
+                        if (permisoRepository.findByPCodigoAndPFechaBajaIsNull("PERM-014").isEmpty()) {
+                                permisoRepository.save(buildPermiso("PERM-014", "confirmar_stock",
+                                                "Permite al vendedor confirmar el stock de los productos"));
+                                log.info("[DataSeeder] Permiso confirmar_stock (PERM-014) añadido independientemente.");
+                        }
                         log.info("[DataSeeder] Permisos base ya existen, se omiten.");
                         return;
                 }
@@ -164,7 +172,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-012", "abm_producto",
                                                 "Permite realizar el alta, baja y modificación de productos de hardware"),
                                 buildPermiso("PERM-013", "consultar_stock",
-                                                "Permite consultar el stock de productos en los comercios"));
+                                                "Permite consultar el stock de productos en los comercios"),
+                                buildPermiso("PERM-014", "confirmar_stock",
+                                                "Permite al vendedor confirmar el stock de los productos"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -194,9 +204,24 @@ public class DataSeeder implements CommandLineRunner {
                                 if (!tienePermiso) {
                                         Permiso pConsultarStock = permisoRepository
                                                         .findByPCodigoAndPFechaBajaIsNull("PERM-013").orElseThrow();
-                                        consumidor.getRolPermisos().add(buildRolPermiso(pConsultarStock));
+                                        RolPermiso nuevoRolPermiso = buildRolPermiso(pConsultarStock);
+                                        consumidor.getRolPermisos().add(nuevoRolPermiso);
                                         rolRepository.save(consumidor);
                                         log.info("[DataSeeder] Permiso consultar_stock añadido al rol Consumidor de forma idempotente.");
+                                }
+                        }
+                        Optional<Rol> rolOptVendedor = rolRepository.findByRNombreActivo("Vendedor");
+                        if (rolOptVendedor.isPresent()) {
+                                Rol vendedor = rolOptVendedor.get();
+                                boolean tienePermiso = vendedor.getRolPermisos().stream()
+                                                .anyMatch(rp -> "confirmar_stock".equals(rp.getPermiso().getPNombre()));
+                                if (!tienePermiso) {
+                                        Permiso pConfirmarStock = permisoRepository
+                                                        .findByPCodigoAndPFechaBajaIsNull("PERM-014").orElseThrow();
+                                        RolPermiso nuevoRolPermiso = buildRolPermiso(pConfirmarStock);
+                                        vendedor.getRolPermisos().add(nuevoRolPermiso);
+                                        rolRepository.save(vendedor);
+                                        log.info("[DataSeeder] Permiso confirmar_stock añadido y persistido explícitamente al rol Vendedor.");
                                 }
                         }
                         return;
@@ -218,6 +243,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pBuscarProducto = findPermiso(todos, "buscar_producto");
                 Permiso pAbmProducto = findPermiso(todos, "abm_producto");
                 Permiso pConsultarStock = findPermiso(todos, "consultar_stock");
+                Permiso pConfirmarStock = findPermiso(todos, "confirmar_stock");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -248,7 +274,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pGestionarProductos),
                                                 buildRolPermiso(pModificarPerfil),
                                                 buildRolPermiso(pRecuperarCredencial),
-                                                buildRolPermiso(pRegistrarComercio)))
+                                                buildRolPermiso(pRegistrarComercio),
+                                                buildRolPermiso(pConfirmarStock)))
                                 .build();
 
                 // Rol Responsable MendoHard
@@ -747,5 +774,41 @@ public class DataSeeder implements CommandLineRunner {
                 ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
                 strategy.generarYGuardarClave(vendedor, "vendedor1234");
                 log.info("[DataSeeder] Vendedor ACEPTADO de prueba y su Comercio PENDIENTE creados.");
+        }
+
+        private void seedConsultasStock() {
+                if (consultaStockRepository.count() > 0) {
+                        log.info("[DataSeeder] ConsultasStock ya existen, se omiten.");
+                        return;
+                }
+
+                EstadoConsultaStock estadoPendiente = estadoConsultaStockRepository.findByECSNombreAndECSFechaBajaIsNull("StockPendiente")
+                                .orElseThrow(() -> new IllegalStateException("Estado StockPendiente no encontrado"));
+
+                Usuario uVendedor = usuarioRepository.findByUEmailAndUFechaBajaIsNull("vendedor@mendohard.com")
+                                .orElseThrow(() -> new IllegalStateException("Vendedor de prueba no encontrado"));
+                Vendedor vendedor = (Vendedor) uVendedor;
+                Comercio comercio = vendedor.getComercios().stream().findFirst()
+                                .orElseThrow(() -> new IllegalStateException("El vendedor de prueba no tiene comercios"));
+
+                Usuario uConsumidor = usuarioRepository.findByUEmailAndUFechaBajaIsNull("consumidor@mendohard.com")
+                                .orElseThrow(() -> new IllegalStateException("Consumidor de prueba no encontrado"));
+                Consumidor consumidor = (Consumidor) uConsumidor;
+
+                Producto producto = productoRepository.findByPCodigoAndPFechaBajaIsNull("PROD-001")
+                                .orElseThrow(() -> new IllegalStateException("Producto PROD-001 no encontrado"));
+
+                ConsultaStock consulta = ConsultaStock.builder()
+                                .CSContador(1L)
+                                .CSFechaHoraSolicitud(java.time.LocalDateTime.now())
+                                .CSFechaHoraExpiracion(java.time.LocalDateTime.now().plusHours(24))
+                                .estadoConsultaStock(estadoPendiente)
+                                .comercio(comercio)
+                                .consumidor(consumidor)
+                                .producto(producto)
+                                .build();
+
+                consultaStockRepository.save(consulta);
+                log.info("[DataSeeder] ConsultaStock de prueba creada exitosamente.");
         }
 }

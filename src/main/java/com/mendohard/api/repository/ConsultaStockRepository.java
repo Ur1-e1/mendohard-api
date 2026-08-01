@@ -14,4 +14,8 @@ public interface ConsultaStockRepository extends JpaRepository<ConsultaStock, Lo
     List<ConsultaStock> findByComercioAndProducto(Comercio comercio, Producto producto);
 
     Optional<ConsultaStock> findFirstByComercioAndProductoOrderByCSFechaHoraSolicitudDesc(Comercio comercio, Producto producto);
+
+    List<ConsultaStock> findByComercio_CCodigoAndEstadoConsultaStock_ECSNombreAndEstadoConsultaStock_ECSFechaBajaIsNull(String cCodigo, String ecsNombre);
+
+    Optional<ConsultaStock> findByCSContador(Long csContador);
 }

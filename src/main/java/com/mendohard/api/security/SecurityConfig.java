@@ -1,6 +1,5 @@
 package com.mendohard.api.security;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,11 +51,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/gestionar-roles/**").hasRole("Responsable MendoHard")
                         // CU-07: Inhabilitar Usuario → exclusivo del Responsable MendoHard
                         .requestMatchers("/api/v1/usuarios/inhabilitar/**").hasRole("Responsable MendoHard")
+                        // CU-14: Confirmar Stock
+                        .requestMatchers("/api/v1/vendedores/me/comercios").hasAuthority("confirmar_stock")
+                        .requestMatchers("/api/v1/comercios/*/consultas-stock/pendientes")
+                        .hasAuthority("confirmar_stock")
+                        .requestMatchers("/api/v1/consultas-stock/*/niveles-stock").hasAuthority("confirmar_stock")
+                        .requestMatchers("/api/v1/consultas-stock/*/confirmar").hasAuthority("confirmar_stock")
                         // CU-08: Validar Vendedor → exclusivo del Responsable MendoHard
                         .requestMatchers("/api/v1/vendedores/**").hasRole("Responsable MendoHard")
                         // CU-09: Validar Comercio → exclusivo del Responsable MendoHard
-                        .requestMatchers(HttpMethod.GET, "/api/v1/comercios/validar/**").hasRole("Responsable MendoHard")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/comercios/validar/**").hasRole("Responsable MendoHard")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/comercios/validar/**")
+                        .hasRole("Responsable MendoHard")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/comercios/validar/**")
+                        .hasRole("Responsable MendoHard")
                         // CU-10: Registrar Comercio → exclusivo de quien posea el permiso
                         .requestMatchers("/api/v1/comercios/**").hasAuthority("registrar_comercio")
                         // CU-11: Buscar Producto
@@ -68,14 +75,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/productos/**").hasAuthority("abm_producto")
                         // CU-13: Consultar Stock
                         .requestMatchers("/api/v1/consultas-stock/**").hasAuthority("consultar_stock")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .formLogin(AbstractHttpConfigurer::disable)
-                // Registrar el handler custom para que los 403 del filtro usen el DTO estandarizado
+                // Registrar el handler custom para que los 403 del filtro usen el DTO
+                // estandarizado
                 .exceptionHandling(ex -> ex
-                        .accessDeniedHandler(customAccessDeniedHandler)
-                );
+                        .accessDeniedHandler(customAccessDeniedHandler));
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -29,7 +29,7 @@ public class NivelStock {
     @Column(name = "ns_cantidad_desde", nullable = false)
     private Integer NSCantidadDesde;
 
-    @Column(name = "ns_cantidad_hasta", nullable = false)
+    @Column(name = "ns_cantidad_hasta")
     private Integer NSCantidadHasta;
 
     @Column(name = "ns_fecha_alta", nullable = false)
