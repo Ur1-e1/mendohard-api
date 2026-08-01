@@ -16,6 +16,8 @@ public interface ComercioRepository extends JpaRepository<Comercio, Long> {
     @Query("SELECT c FROM Comercio c WHERE c.CCodigo = :codigo")
     Optional<Comercio> findByCodigoComercio(@Param("codigo") String codigo);
 
+    Optional<Comercio> findByCCodigoAndCFechaBajaIsNull(String cCodigo);
+
     @Query("SELECT c FROM Comercio c " +
            "JOIN c.comercioEstados ce " +
            "JOIN ce.estadoComercio ec " +
