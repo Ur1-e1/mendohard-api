@@ -782,14 +782,22 @@ public class DataSeeder implements CommandLineRunner {
                         return;
                 }
 
-                EstadoConsultaStock estadoPendiente = estadoConsultaStockRepository.findByECSNombreAndECSFechaBajaIsNull("StockPendiente")
+                EstadoConsultaStock estadoPendiente = estadoConsultaStockRepository
+                                .findByECSNombreAndECSFechaBajaIsNull("StockPendiente")
                                 .orElseThrow(() -> new IllegalStateException("Estado StockPendiente no encontrado"));
+                EstadoConsultaStock estadoSinStock = estadoConsultaStockRepository
+                                .findByECSNombreAndECSFechaBajaIsNull("SinStock")
+                                .orElseThrow(() -> new IllegalStateException("Estado SinStock no encontrado"));
+                EstadoConsultaStock estadoDisponible = estadoConsultaStockRepository
+                                .findByECSNombreAndECSFechaBajaIsNull("StockDisponible")
+                                .orElseThrow(() -> new IllegalStateException("Estado StockDisponible no encontrado"));
 
                 Usuario uVendedor = usuarioRepository.findByUEmailAndUFechaBajaIsNull("vendedor@mendohard.com")
                                 .orElseThrow(() -> new IllegalStateException("Vendedor de prueba no encontrado"));
                 Vendedor vendedor = (Vendedor) uVendedor;
                 Comercio comercio = vendedor.getComercios().stream().findFirst()
-                                .orElseThrow(() -> new IllegalStateException("El vendedor de prueba no tiene comercios"));
+                                .orElseThrow(() -> new IllegalStateException(
+                                                "El vendedor de prueba no tiene comercios"));
 
                 Usuario uConsumidor = usuarioRepository.findByUEmailAndUFechaBajaIsNull("consumidor@mendohard.com")
                                 .orElseThrow(() -> new IllegalStateException("Consumidor de prueba no encontrado"));
@@ -798,17 +806,39 @@ public class DataSeeder implements CommandLineRunner {
                 Producto producto = productoRepository.findByPCodigoAndPFechaBajaIsNull("PROD-001")
                                 .orElseThrow(() -> new IllegalStateException("Producto PROD-001 no encontrado"));
 
-                ConsultaStock consulta = ConsultaStock.builder()
+                java.time.LocalDateTime expiracionPrueba = java.time.LocalDateTime.now().minusMinutes(3);
+
+                ConsultaStock consulta1 = ConsultaStock.builder()
                                 .CSContador(1L)
-                                .CSFechaHoraSolicitud(java.time.LocalDateTime.now())
-                                .CSFechaHoraExpiracion(java.time.LocalDateTime.now().plusHours(24))
+                                .CSFechaHoraSolicitud(java.time.LocalDateTime.now().minusHours(1))
+                                .CSFechaHoraExpiracion(expiracionPrueba)
                                 .estadoConsultaStock(estadoPendiente)
                                 .comercio(comercio)
                                 .consumidor(consumidor)
                                 .producto(producto)
                                 .build();
 
-                consultaStockRepository.save(consulta);
-                log.info("[DataSeeder] ConsultaStock de prueba creada exitosamente.");
+                ConsultaStock consulta2 = ConsultaStock.builder()
+                                .CSContador(2L)
+                                .CSFechaHoraSolicitud(java.time.LocalDateTime.now().minusHours(1))
+                                .CSFechaHoraExpiracion(expiracionPrueba)
+                                .estadoConsultaStock(estadoSinStock)
+                                .comercio(comercio)
+                                .consumidor(consumidor)
+                                .producto(producto)
+                                .build();
+
+                ConsultaStock consulta3 = ConsultaStock.builder()
+                                .CSContador(3L)
+                                .CSFechaHoraSolicitud(java.time.LocalDateTime.now().minusHours(1))
+                                .CSFechaHoraExpiracion(expiracionPrueba)
+                                .estadoConsultaStock(estadoDisponible)
+                                .comercio(comercio)
+                                .consumidor(consumidor)
+                                .producto(producto)
+                                .build();
+
+                consultaStockRepository.saveAll(List.of(consulta1, consulta2, consulta3));
+                log.info("[DataSeeder] 3 ConsultaStock de prueba (vencidas hace 3 min) creadas exitosamente.");
         }
 }
