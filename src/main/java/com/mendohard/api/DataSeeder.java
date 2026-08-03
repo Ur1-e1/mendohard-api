@@ -143,6 +143,11 @@ public class DataSeeder implements CommandLineRunner {
                                                 "Permite al vendedor confirmar el stock de los productos"));
                                 log.info("[DataSeeder] Permiso confirmar_stock (PERM-014) añadido independientemente.");
                         }
+                        if (permisoRepository.findByPCodigoAndPFechaBajaIsNull("PERM-015").isEmpty()) {
+                                permisoRepository.save(buildPermiso("PERM-015", "ver_metricas",
+                                                "Permite visualizar las métricas de demanda"));
+                                log.info("[DataSeeder] Permiso ver_metricas (PERM-015) añadido independientemente.");
+                        }
                         log.info("[DataSeeder] Permisos base ya existen, se omiten.");
                         return;
                 }
@@ -174,7 +179,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-013", "consultar_stock",
                                                 "Permite consultar el stock de productos en los comercios"),
                                 buildPermiso("PERM-014", "confirmar_stock",
-                                                "Permite al vendedor confirmar el stock de los productos"));
+                                                "Permite al vendedor confirmar el stock de los productos"),
+                                buildPermiso("PERM-015", "ver_metricas",
+                                                "Permite visualizar las métricas de demanda"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -223,6 +230,16 @@ public class DataSeeder implements CommandLineRunner {
                                         rolRepository.save(vendedor);
                                         log.info("[DataSeeder] Permiso confirmar_stock añadido y persistido explícitamente al rol Vendedor.");
                                 }
+                                boolean tienePermisoMetricas = vendedor.getRolPermisos().stream()
+                                                .anyMatch(rp -> "ver_metricas".equals(rp.getPermiso().getPNombre()));
+                                if (!tienePermisoMetricas) {
+                                        Permiso pVerMetricas = permisoRepository
+                                                        .findByPCodigoAndPFechaBajaIsNull("PERM-015").orElseThrow();
+                                        RolPermiso nuevoRolPermiso = buildRolPermiso(pVerMetricas);
+                                        vendedor.getRolPermisos().add(nuevoRolPermiso);
+                                        rolRepository.save(vendedor);
+                                        log.info("[DataSeeder] Permiso ver_metricas añadido y persistido explícitamente al rol Vendedor.");
+                                }
                         }
                         return;
                 }
@@ -244,6 +261,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pAbmProducto = findPermiso(todos, "abm_producto");
                 Permiso pConsultarStock = findPermiso(todos, "consultar_stock");
                 Permiso pConfirmarStock = findPermiso(todos, "confirmar_stock");
+                Permiso pVerMetricas = findPermiso(todos, "ver_metricas");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -275,7 +293,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pModificarPerfil),
                                                 buildRolPermiso(pRecuperarCredencial),
                                                 buildRolPermiso(pRegistrarComercio),
-                                                buildRolPermiso(pConfirmarStock)))
+                                                buildRolPermiso(pConfirmarStock),
+                                                buildRolPermiso(pVerMetricas)))
                                 .build();
 
                 // Rol Responsable MendoHard
@@ -777,6 +796,7 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         private void seedConsultasStock() {
+                consultaStockRepository.deleteAll();
                 if (consultaStockRepository.count() > 0) {
                         log.info("[DataSeeder] ConsultasStock ya existen, se omiten.");
                         return;
@@ -811,6 +831,7 @@ public class DataSeeder implements CommandLineRunner {
                 ConsultaStock consulta1 = ConsultaStock.builder()
                                 .CSContador(1L)
                                 .CSFechaHoraSolicitud(java.time.LocalDateTime.now().minusHours(1))
+                                .CSFechaHoraRespuesta(java.time.LocalDateTime.now().minusMinutes(30))
                                 .CSFechaHoraExpiracion(expiracionPrueba)
                                 .estadoConsultaStock(estadoPendiente)
                                 .comercio(comercio)
@@ -821,6 +842,7 @@ public class DataSeeder implements CommandLineRunner {
                 ConsultaStock consulta2 = ConsultaStock.builder()
                                 .CSContador(2L)
                                 .CSFechaHoraSolicitud(java.time.LocalDateTime.now().minusHours(1))
+                                .CSFechaHoraRespuesta(java.time.LocalDateTime.now().minusMinutes(30))
                                 .CSFechaHoraExpiracion(expiracionPrueba)
                                 .estadoConsultaStock(estadoSinStock)
                                 .comercio(comercio)
@@ -831,6 +853,7 @@ public class DataSeeder implements CommandLineRunner {
                 ConsultaStock consulta3 = ConsultaStock.builder()
                                 .CSContador(3L)
                                 .CSFechaHoraSolicitud(java.time.LocalDateTime.now().minusHours(1))
+                                .CSFechaHoraRespuesta(java.time.LocalDateTime.now().minusMinutes(30))
                                 .CSFechaHoraExpiracion(expiracionPrueba)
                                 .estadoConsultaStock(estadoDisponible)
                                 .comercio(comercio)
