@@ -31,4 +31,8 @@ public interface VendedorRepository extends JpaRepository<Vendedor, Long> {
 
     @Query("SELECT v FROM Vendedor v JOIN v.comercios c WHERE c.id = :comercioId")
     Optional<Vendedor> findByComercioId(@Param("comercioId") Long comercioId);
+
+    // UI_06: Contar vendedores activos y aceptados
+    @Query("SELECT COUNT(v) FROM Vendedor v JOIN v.vendedorEstados ve WHERE v.UFechaBaja IS NULL AND ve.VEFechaHasta IS NULL AND ve.estadoVendedor.EVNombre = 'VendedorAceptado'")
+    Long countVendedoresAceptadosActivos();
 }
