@@ -1,6 +1,5 @@
 package com.mendohard.api.controller;
 
-
 import com.mendohard.api.dto.IniciarSesionRequestDTO;
 import com.mendohard.api.dto.IniciarSesionResponseDTO;
 import com.mendohard.api.service.IniciarSesionService;
@@ -9,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 @Slf4j
 public class IniciarSesionController {
