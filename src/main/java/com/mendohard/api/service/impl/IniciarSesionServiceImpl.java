@@ -11,6 +11,10 @@ import com.mendohard.api.model.Usuario;
 import com.mendohard.api.repository.ClaveRepository;
 import com.mendohard.api.repository.IntentoFallidoRepository;
 import com.mendohard.api.repository.UsuarioRepository;
+import com.mendohard.api.repository.VendedorEstadoRepository;
+import com.mendohard.api.repository.ComercioEstadoRepository;
+import com.mendohard.api.repository.ConsumidorRepository;
+import com.mendohard.api.repository.VendedorRepository;
 import com.mendohard.api.security.JwtUtil;
 import com.mendohard.api.service.IniciarSesionService;
 import com.mendohard.api.service.strategy.ClaveStrategy;
@@ -32,6 +36,10 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
     private final UsuarioRepository usuarioRepository;
     private final ClaveRepository claveRepository;
     private final IntentoFallidoRepository intentoFallidoRepository;
+    private final VendedorEstadoRepository vendedorEstadoRepository;
+    private final ComercioEstadoRepository comercioEstadoRepository;
+    private final ConsumidorRepository consumidorRepository;
+    private final VendedorRepository vendedorRepository;
     private final JwtUtil jwtUtil;
     private final ClaveStrategyFactory claveStrategyFactory;
 
@@ -115,13 +123,25 @@ public class IniciarSesionServiceImpl implements IniciarSesionService {
 
         String tokenGenerado = jwtUtil.generarToken(usuario.getUEmail(), usuario.getRol().getRNombre(), permisos);
 
-        return IniciarSesionResponseDTO.builder()
+        IniciarSesionResponseDTO.IniciarSesionResponseDTOBuilder responseBuilder = IniciarSesionResponseDTO.builder()
                 .email(usuario.getUEmail())
                 .rolNombre(usuario.getRol().getRNombre())
                 .nombreCompleto(usuario.getUNombre() + " " + usuario.getUApellido())
                 .redireccionHome(redireccionHome)
-                .token(tokenGenerado)
-                .build();
+                .token(tokenGenerado);
+
+        if ("Responsable MendoHard".equals(usuario.getRol().getRNombre())) {
+            Long usuariosTotales = consumidorRepository.countConsumidoresActivos() + vendedorRepository.countVendedoresAceptadosActivos();
+            
+            IniciarSesionResponseDTO.ExtraDataResponsableDTO extraData = IniciarSesionResponseDTO.ExtraDataResponsableDTO.builder()
+                    .usuariosTotales(usuariosTotales)
+                    .vendedoresPendientes(vendedorEstadoRepository.countVendedoresPendientes())
+                    .comerciosActivos(comercioEstadoRepository.countComerciosActivos())
+                    .build();
+            responseBuilder.extraData(extraData);
+        }
+
+        return responseBuilder.build();
     }
 
     private String determinarRedireccion(String rolNombre) {

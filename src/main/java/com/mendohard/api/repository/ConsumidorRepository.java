@@ -27,4 +27,8 @@ public interface ConsumidorRepository extends JpaRepository<Consumidor, Long> {
     List<Consumidor> findByUFechaBajaIsNull();
 
     Optional<Consumidor> findByUCodigoAndUFechaBajaIsNull(String uCodigo);
+
+    // UI_06: Contar consumidores activos
+    @Query("SELECT COUNT(c) FROM Consumidor c WHERE c.UFechaBaja IS NULL")
+    Long countConsumidoresActivos();
 }
