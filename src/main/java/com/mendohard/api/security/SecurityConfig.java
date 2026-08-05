@@ -32,6 +32,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        // Permitir preflight CORS (OPTIONS) sin autenticación en todos los endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/iniciar-sesion").permitAll()
                         .requestMatchers("/api/v1/auth/registro/consumidor").permitAll()
                         .requestMatchers("/api/v1/auth/registro/vendedor").permitAll()

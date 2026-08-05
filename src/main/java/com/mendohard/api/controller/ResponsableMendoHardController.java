@@ -1,6 +1,5 @@
 package com.mendohard.api.controller;
 
-
 import com.mendohard.api.dto.RegistrarResponsableMendoHardRequestDTO;
 import com.mendohard.api.dto.RegistrarResponsableMendoHardResponseDTO;
 import com.mendohard.api.service.ResponsableMendoHardService;
@@ -24,8 +23,10 @@ public class ResponsableMendoHardController {
             @Valid @RequestBody RegistrarResponsableMendoHardRequestDTO request,
             @RequestHeader("Authorization") String token // O el mecanismo que uses para obtener la sesión
     ) {
-        // Enviaremos el identificador del usuario en sesión al servicio para validar la precondición
-        RegistrarResponsableMendoHardResponseDTO response = responsableMendoHardService.registrarResponsable(request, token);
+        // Enviaremos el identificador del usuario en sesión al servicio para validar la
+        // precondición
+        RegistrarResponsableMendoHardResponseDTO response = responsableMendoHardService.registrarResponsable(request,
+                token);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }
