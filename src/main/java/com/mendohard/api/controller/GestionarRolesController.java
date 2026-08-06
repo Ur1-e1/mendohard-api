@@ -27,7 +27,8 @@ import java.util.Map;
  * Expone los endpoints REST para la gestion de roles y permisos del sistema.
  *
  * Seguridad: protegido a nivel de URL en SecurityConfig
- * (.requestMatchers("/api/v1/gestionar-roles/**").hasRole("Responsable MendoHard")).
+ * (.requestMatchers("/api/v1/gestionar-roles/**").hasRole("Responsable
+ * MendoHard")).
  * El acceso no autorizado es manejado por CustomAccessDeniedHandler (HTTP 403).
  */
 @RestController
@@ -36,103 +37,103 @@ import java.util.Map;
 @Slf4j
 public class GestionarRolesController {
 
-    private final GestionarRolesService gestionarRolesService;
+        private final GestionarRolesService gestionarRolesService;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /roles-activos
-    // Retorna la lista de roles con RFechaBaja nula (UI 20 / UI 23).
-    // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
+        // GET /roles-activos
+        // Retorna la lista de roles con RFechaBaja nula (UI 20 / UI 23).
+        // ─────────────────────────────────────────────────────────────────────────
 
-    @GetMapping("/roles-activos")
-    public ResponseEntity<List<RolResponseDTO>> obtenerRolesActivos() {
-        log.info("GET /api/v1/gestionar-roles/roles-activos — Solicitud recibida");
+        @GetMapping("/roles-activos")
+        public ResponseEntity<List<RolResponseDTO>> obtenerRolesActivos() {
+                log.info("GET /api/v1/gestionar-roles/roles-activos — Solicitud recibida");
 
-        List<RolResponseDTO> roles = gestionarRolesService.obtenerRolesActivos();
+                List<RolResponseDTO> roles = gestionarRolesService.obtenerRolesActivos();
 
-        return ResponseEntity.status(HttpStatus.OK).body(roles);
-    }
+                return ResponseEntity.status(HttpStatus.OK).body(roles);
+        }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /permisos-activos
-    // Retorna la lista global de permisos con PFechaBaja nula (UI 21).
-    // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
+        // GET /permisos-activos
+        // Retorna la lista global de permisos con PFechaBaja nula (UI 21).
+        // ─────────────────────────────────────────────────────────────────────────
 
-    @GetMapping("/permisos-activos")
-    public ResponseEntity<List<PermisoResponseDTO>> obtenerPermisosActivos() {
-        log.info("GET /api/v1/gestionar-roles/permisos-activos — Solicitud recibida");
+        @GetMapping("/permisos-activos")
+        public ResponseEntity<List<PermisoResponseDTO>> obtenerPermisosActivos() {
+                log.info("GET /api/v1/gestionar-roles/permisos-activos — Solicitud recibida");
 
-        List<PermisoResponseDTO> permisos = gestionarRolesService.obtenerPermisosActivosGlobales();
+                List<PermisoResponseDTO> permisos = gestionarRolesService.obtenerPermisosActivosGlobales();
 
-        return ResponseEntity.status(HttpStatus.OK).body(permisos);
-    }
+                return ResponseEntity.status(HttpStatus.OK).body(permisos);
+        }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /roles/{rCodigo}/permisos
-    // Retorna los permisos activos asignados al rol indicado (UI 24).
-    // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
+        // GET /roles/{rCodigo}/permisos
+        // Retorna los permisos activos asignados al rol indicado (UI 24).
+        // ─────────────────────────────────────────────────────────────────────────
 
-    @GetMapping("/roles/{rCodigo}/permisos")
-    public ResponseEntity<List<PermisoResponseDTO>> obtenerPermisosDelRol(
-            @PathVariable String rCodigo) {
+        @GetMapping("/roles/{rCodigo}/permisos")
+        public ResponseEntity<List<PermisoResponseDTO>> obtenerPermisosDelRol(
+                        @PathVariable("rCodigo") String rCodigo) {
 
-        log.info("GET /api/v1/gestionar-roles/roles/{}/permisos — Solicitud recibida", rCodigo);
+                log.info("GET /api/v1/gestionar-roles/roles/{}/permisos — Solicitud recibida", rCodigo);
 
-        List<PermisoResponseDTO> permisos = gestionarRolesService.obtenerPermisosActivosPorRol(rCodigo);
+                List<PermisoResponseDTO> permisos = gestionarRolesService.obtenerPermisosActivosPorRol(rCodigo);
 
-        return ResponseEntity.status(HttpStatus.OK).body(permisos);
-    }
+                return ResponseEntity.status(HttpStatus.OK).body(permisos);
+        }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST /asignar-permiso
-    // Vincula un permiso a un rol creando un RolPermiso activo (UI 21 -> UI 22).
-    // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
+        // POST /asignar-permiso
+        // Vincula un permiso a un rol creando un RolPermiso activo (UI 21 -> UI 22).
+        // ─────────────────────────────────────────────────────────────────────────
 
-    @PostMapping("/asignar-permiso")
-    public ResponseEntity<Map<String, String>> asignarPermiso(
-            @Valid @RequestBody AsignarPermisoRequestDTO request) {
+        @PostMapping("/asignar-permiso")
+        public ResponseEntity<Map<String, String>> asignarPermiso(
+                        @Valid @RequestBody AsignarPermisoRequestDTO request) {
 
-        log.info("POST /api/v1/gestionar-roles/asignar-permiso — RCodigo: {}, PCodigo: {}",
-                request.RCodigo(), request.PCodigo());
+                log.info("POST /api/v1/gestionar-roles/asignar-permiso — RCodigo: {}, PCodigo: {}",
+                                request.RCodigo(), request.PCodigo());
 
-        gestionarRolesService.asignarPermiso(request);
+                gestionarRolesService.asignarPermiso(request);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("mensaje", "Permiso asignado con exito"));
-    }
+                return ResponseEntity.status(HttpStatus.OK)
+                                .body(Map.of("mensaje", "Permiso asignado con exito"));
+        }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST /quitar-permiso
-    // Realiza la baja logica del RolPermiso asignando RPFechaHasta (UI 24).
-    // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
+        // POST /quitar-permiso
+        // Realiza la baja logica del RolPermiso asignando RPFechaHasta (UI 24).
+        // ─────────────────────────────────────────────────────────────────────────
 
-    @PostMapping("/quitar-permiso")
-    public ResponseEntity<Map<String, String>> quitarPermiso(
-            @Valid @RequestBody QuitarPermisoRequestDTO request) {
+        @PostMapping("/quitar-permiso")
+        public ResponseEntity<Map<String, String>> quitarPermiso(
+                        @Valid @RequestBody QuitarPermisoRequestDTO request) {
 
-        log.info("POST /api/v1/gestionar-roles/quitar-permiso — RCodigo: {}, PCodigo: {}",
-                request.RCodigo(), request.PCodigo());
+                log.info("POST /api/v1/gestionar-roles/quitar-permiso — RCodigo: {}, PCodigo: {}",
+                                request.RCodigo(), request.PCodigo());
 
-        gestionarRolesService.quitarPermiso(request);
+                gestionarRolesService.quitarPermiso(request);
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("mensaje", "Permiso quitado con exito"));
-    }
+                return ResponseEntity.status(HttpStatus.OK)
+                                .body(Map.of("mensaje", "Permiso quitado con exito"));
+        }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST /opcion-navegacion
-    // Procesa la opcion seleccionada en el menu principal (UI 19).
-    // ─────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────
+        // POST /opcion-navegacion
+        // Procesa la opcion seleccionada en el menu principal (UI 19).
+        // ─────────────────────────────────────────────────────────────────────────
 
-    @PostMapping("/opcion-navegacion")
-    public ResponseEntity<NavegacionOpcionDTO> procesarOpcionNavegacion(
-            @Valid @RequestBody OpcionNavegacionRequestDTO request) {
+        @PostMapping("/opcion-navegacion")
+        public ResponseEntity<NavegacionOpcionDTO> procesarOpcionNavegacion(
+                        @Valid @RequestBody OpcionNavegacionRequestDTO request) {
 
-        log.info("POST /api/v1/gestionar-roles/opcion-navegacion — opcion: {}",
-                request.opcionSeleccionada());
+                log.info("POST /api/v1/gestionar-roles/opcion-navegacion — opcion: {}",
+                                request.opcionSeleccionada());
 
-        NavegacionOpcionDTO respuesta =
-                gestionarRolesService.procesarOpcionNavegacion(request.opcionSeleccionada());
+                NavegacionOpcionDTO respuesta = gestionarRolesService
+                                .procesarOpcionNavegacion(request.opcionSeleccionada());
 
-        return ResponseEntity.status(HttpStatus.OK).body(respuesta);
-    }
+                return ResponseEntity.status(HttpStatus.OK).body(respuesta);
+        }
 }

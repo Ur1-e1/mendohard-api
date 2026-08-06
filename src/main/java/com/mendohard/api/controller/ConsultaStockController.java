@@ -43,7 +43,7 @@ public class ConsultaStockController {
 
     @GetMapping("/mapa")
     public ResponseEntity<List<MapaStockComercioResponseDTO>> obtenerMapaStockDisponibilidad(
-            @RequestParam String pCodigo) {
+            @RequestParam("pCodigo") String pCodigo) {
         return ResponseEntity.ok(consultaStockService.obtenerMapaStockDisponibilidad(pCodigo));
     }
 }
