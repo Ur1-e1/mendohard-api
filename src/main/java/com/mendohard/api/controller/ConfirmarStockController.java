@@ -26,18 +26,18 @@ public class ConfirmarStockController {
     }
 
     @GetMapping("/comercios/{cCodigo}/consultas-stock/pendientes")
-    public ResponseEntity<List<ConsultaStockPendienteResponseDTO>> listarConsultasPendientes(@PathVariable String cCodigo) {
+    public ResponseEntity<List<ConsultaStockPendienteResponseDTO>> listarConsultasPendientes(@PathVariable("cCodigo") String cCodigo) {
         return ResponseEntity.ok(confirmarStockService.listarConsultasPendientes(cCodigo));
     }
 
     @GetMapping("/consultas-stock/{csContador}/niveles-stock")
-    public ResponseEntity<List<NivelStockResponseDTO>> obtenerNivelesStock(@PathVariable Long csContador) {
+    public ResponseEntity<List<NivelStockResponseDTO>> obtenerNivelesStock(@PathVariable("csContador") Long csContador) {
         return ResponseEntity.ok(confirmarStockService.obtenerNivelesStockJerarquicos(csContador));
     }
 
     @PostMapping("/consultas-stock/{csContador}/confirmar")
     public ResponseEntity<ConsultaStockRespuestaDTO> confirmarStock(
-            @PathVariable Long csContador,
+            @PathVariable("csContador") Long csContador,
             @Valid @RequestBody ConfirmarStockRequestDTO requestDTO) {
         return ResponseEntity.ok(confirmarStockService.confirmarStock(csContador, requestDTO));
     }

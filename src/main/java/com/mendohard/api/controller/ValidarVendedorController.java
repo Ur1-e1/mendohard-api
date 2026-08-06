@@ -25,7 +25,7 @@ public class ValidarVendedorController {
     }
 
     @GetMapping("/pendientes/{uCodigo}")
-    public ResponseEntity<VendedorDetalleResponseDTO> obtenerDetalleVendedorPendiente(@PathVariable String uCodigo) {
+    public ResponseEntity<VendedorDetalleResponseDTO> obtenerDetalleVendedorPendiente(@PathVariable("uCodigo") String uCodigo) {
         VendedorDetalleResponseDTO response = validarVendedorService.obtenerDetalleVendedorPendiente(uCodigo);
         return ResponseEntity.ok(response);
     }

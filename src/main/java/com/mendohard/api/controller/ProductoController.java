@@ -28,7 +28,7 @@ public class ProductoController {
     }
 
     @GetMapping("/{codigo}")
-    public ResponseEntity<ProductoDetalleDTO> obtenerProductoPorCodigo(@PathVariable String codigo) {
+    public ResponseEntity<ProductoDetalleDTO> obtenerProductoPorCodigo(@PathVariable("codigo") String codigo) {
         return ResponseEntity.ok(abmProductoService.obtenerProductoPorCodigo(codigo));
     }
 
@@ -40,13 +40,13 @@ public class ProductoController {
 
     @PutMapping("/{codigo}")
     public ResponseEntity<ProductoABMResponseDTO> actualizarProducto(
-            @PathVariable String codigo,
+            @PathVariable("codigo") String codigo,
             @Valid @RequestBody ActualizarProductoRequestDTO request) {
         return ResponseEntity.ok(abmProductoService.actualizarProducto(codigo, request));
     }
 
     @PatchMapping("/{codigo}/deshabilitar")
-    public ResponseEntity<ProductoABMResponseDTO> deshabilitarProducto(@PathVariable String codigo) {
+    public ResponseEntity<ProductoABMResponseDTO> deshabilitarProducto(@PathVariable("codigo") String codigo) {
         return ResponseEntity.ok(abmProductoService.deshabilitarProducto(codigo));
     }
 }

@@ -22,7 +22,7 @@ public class InhabilitarUsuarioController {
     }
 
     @PutMapping("/consumidores/{uCodigo}")
-    public ResponseEntity<Void> inhabilitarConsumidor(@PathVariable String uCodigo) {
+    public ResponseEntity<Void> inhabilitarConsumidor(@PathVariable("uCodigo") String uCodigo) {
         inhabilitarUsuarioService.inhabilitarConsumidor(uCodigo);
         return ResponseEntity.noContent().build();
     }
@@ -33,7 +33,7 @@ public class InhabilitarUsuarioController {
     }
 
     @PutMapping("/vendedores/{uCodigo}")
-    public ResponseEntity<Void> inhabilitarVendedor(@PathVariable String uCodigo) {
+    public ResponseEntity<Void> inhabilitarVendedor(@PathVariable("uCodigo") String uCodigo) {
         inhabilitarUsuarioService.inhabilitarVendedorYComercios(uCodigo);
         return ResponseEntity.noContent().build();
     }

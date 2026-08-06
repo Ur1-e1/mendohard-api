@@ -24,13 +24,13 @@ public class ValidarComercioController {
     }
 
     @GetMapping("/{cCodigo}")
-    public ResponseEntity<ComercioDetalleValidacionDto> obtenerComercioParaValidacion(@PathVariable String cCodigo) {
+    public ResponseEntity<ComercioDetalleValidacionDto> obtenerComercioParaValidacion(@PathVariable("cCodigo") String cCodigo) {
         return ResponseEntity.ok(validarComercioService.obtenerComercioParaValidacion(cCodigo));
     }
 
     @PostMapping("/{cCodigo}/decision")
     public ResponseEntity<String> procesarDecisionValidacion(
-            @PathVariable String cCodigo,
+            @PathVariable("cCodigo") String cCodigo,
             @Valid @RequestBody DecisionValidacionRequestDto requestDto) {
         
         validarComercioService.procesarDecisionValidacion(cCodigo, requestDto);
