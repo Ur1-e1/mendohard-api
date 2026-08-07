@@ -148,6 +148,11 @@ public class DataSeeder implements CommandLineRunner {
                                                 "Permite visualizar las métricas de demanda"));
                                 log.info("[DataSeeder] Permiso ver_metricas (PERM-015) añadido independientemente.");
                         }
+                        if (permisoRepository.findByPCodigoAndPFechaBajaIsNull("PERM-016").isEmpty()) {
+                                permisoRepository.save(buildPermiso("PERM-016", "ver_metricas_responsable",
+                                                "Permite visualizar las métricas del dashboard del Responsable MendoHard"));
+                                log.info("[DataSeeder] Permiso ver_metricas_responsable (PERM-016) añadido independientemente.");
+                        }
                         log.info("[DataSeeder] Permisos base ya existen, se omiten.");
                         return;
                 }
@@ -181,7 +186,9 @@ public class DataSeeder implements CommandLineRunner {
                                 buildPermiso("PERM-014", "confirmar_stock",
                                                 "Permite al vendedor confirmar el stock de los productos"),
                                 buildPermiso("PERM-015", "ver_metricas",
-                                                "Permite visualizar las métricas de demanda"));
+                                                "Permite visualizar las métricas de demanda"),
+                                buildPermiso("PERM-016", "ver_metricas_responsable",
+                                                "Permite visualizar las métricas del dashboard del Responsable MendoHard"));
                 permisoRepository.saveAll(permisos);
                 log.info("[DataSeeder] {} permisos creados.", permisos.size());
         }
@@ -241,6 +248,20 @@ public class DataSeeder implements CommandLineRunner {
                                         log.info("[DataSeeder] Permiso ver_metricas añadido y persistido explícitamente al rol Vendedor.");
                                 }
                         }
+                        Optional<Rol> rolOptRMH = rolRepository.findByRNombreActivo("Responsable MendoHard");
+                        if (rolOptRMH.isPresent()) {
+                                Rol rmh = rolOptRMH.get();
+                                boolean tienePermisoMetricasRMH = rmh.getRolPermisos().stream()
+                                                .anyMatch(rp -> "ver_metricas_responsable".equals(rp.getPermiso().getPNombre()));
+                                if (!tienePermisoMetricasRMH) {
+                                        Permiso pVerMetricasRMH = permisoRepository
+                                                        .findByPCodigoAndPFechaBajaIsNull("PERM-016").orElseThrow();
+                                        RolPermiso nuevoRolPermiso = buildRolPermiso(pVerMetricasRMH);
+                                        rmh.getRolPermisos().add(nuevoRolPermiso);
+                                        rolRepository.save(rmh);
+                                        log.info("[DataSeeder] Permiso ver_metricas_responsable añadido y persistido explícitamente al rol Responsable MendoHard.");
+                                }
+                        }
                         return;
                 }
 
@@ -262,6 +283,7 @@ public class DataSeeder implements CommandLineRunner {
                 Permiso pConsultarStock = findPermiso(todos, "consultar_stock");
                 Permiso pConfirmarStock = findPermiso(todos, "confirmar_stock");
                 Permiso pVerMetricas = findPermiso(todos, "ver_metricas");
+                Permiso pVerMetricasRMH = findPermiso(todos, "ver_metricas_responsable");
 
                 // Rol Consumidor
                 Rol consumidor = Rol.builder()
@@ -310,7 +332,8 @@ public class DataSeeder implements CommandLineRunner {
                                                 buildRolPermiso(pGestionarComercios),
                                                 buildRolPermiso(pValidarVendedor),
                                                 buildRolPermiso(pValidarComercio),
-                                                buildRolPermiso(pAbmProducto)))
+                                                buildRolPermiso(pAbmProducto),
+                                                buildRolPermiso(pVerMetricasRMH)))
                                 .build();
 
                 rolRepository.saveAll(List.of(consumidor, vendedor, rmh));

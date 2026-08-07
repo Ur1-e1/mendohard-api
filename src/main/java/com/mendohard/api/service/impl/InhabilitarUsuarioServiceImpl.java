@@ -1,5 +1,6 @@
-package com.mendohard.api.service;
+package com.mendohard.api.service.impl;
 
+import com.mendohard.api.service.InhabilitarUsuarioService;
 import com.mendohard.api.dto.ConsumidorInhabilitarResponseDto;
 import com.mendohard.api.dto.VendedorInhabilitarResponseDto;
 import com.mendohard.api.exception.DatosNoValidosException;
