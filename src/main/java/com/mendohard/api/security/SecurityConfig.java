@@ -79,6 +79,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/consultas-stock/**").hasAuthority("consultar_stock")
                         // CU-16: Ver Métricas
                         .requestMatchers("/api/v1/metricas/**").hasAuthority("ver_metricas")
+                        // Dashboard Responsable MendoHard
+                        .requestMatchers("/api/v1/dashboard/responsable/**").hasAuthority("ver_metricas_responsable")
                         .anyRequest().authenticated())
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .formLogin(AbstractHttpConfigurer::disable)
