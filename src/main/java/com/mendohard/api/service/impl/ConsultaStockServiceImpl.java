@@ -88,11 +88,15 @@ public class ConsultaStockServiceImpl implements ConsultaStockService {
                 ultimaConsultaDTO = mapConsultaToUltimaConsultaDTO(ultimaConsulta);
                 
                 if ("StockDisponible".equals(ultimaConsulta.getEstadoConsultaStock().getECSNombre())) {
-                    Categoria categoria = producto.getCategoria();
-                    Optional<NivelStock> nivelStockOpt = nivelStockRepository.findByCategoriaAndNSFechaBajaIsNull(categoria);
-                    if (nivelStockOpt.isPresent()) {
-                        ultimaConsultaDTO.setNSCodigo(nivelStockOpt.get().getNSCodigo());
-                        ultimaConsultaDTO.setNSNombre(nivelStockOpt.get().getNSNombre());
+                    Integer cantidadRespuesta = ultimaConsulta.getCSCantidadRespuesta();
+                    if (cantidadRespuesta != null && cantidadRespuesta > 0) {
+                        Categoria categoria = producto.getCategoria();
+                        Optional<NivelStock> nivelStockOpt = nivelStockRepository
+                                .findNivelStockActivoPorCategoriaYCantidad(categoria, cantidadRespuesta);
+                        if (nivelStockOpt.isPresent()) {
+                            ultimaConsultaDTO.setNSCodigo(nivelStockOpt.get().getNSCodigo());
+                            ultimaConsultaDTO.setNSNombre(nivelStockOpt.get().getNSNombre());
+                        }
                     }
                 }
             }
