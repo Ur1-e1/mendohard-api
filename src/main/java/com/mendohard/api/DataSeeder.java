@@ -62,8 +62,6 @@ public class DataSeeder implements CommandLineRunner {
                 seedAdminRMH();
                 seedConsumidor();
                 seedVendedorYComercio();
-                seedVendedorPendienteYComercio();
-                seedVendedorAceptadoYComercioPendiente();
                 seedCategoriasYProductos();
                 seedEstadosConsultaStock();
                 seedNivelesStock();
@@ -252,7 +250,8 @@ public class DataSeeder implements CommandLineRunner {
                         if (rolOptRMH.isPresent()) {
                                 Rol rmh = rolOptRMH.get();
                                 boolean tienePermisoMetricasRMH = rmh.getRolPermisos().stream()
-                                                .anyMatch(rp -> "ver_metricas_responsable".equals(rp.getPermiso().getPNombre()));
+                                                .anyMatch(rp -> "ver_metricas_responsable"
+                                                                .equals(rp.getPermiso().getPNombre()));
                                 if (!tienePermisoMetricasRMH) {
                                         Permiso pVerMetricasRMH = permisoRepository
                                                         .findByPCodigoAndPFechaBajaIsNull("PERM-016").orElseThrow();
@@ -369,29 +368,6 @@ public class DataSeeder implements CommandLineRunner {
                                                 .build());
                 estadoConsultaStockRepository.saveAll(estados);
                 log.info("[DataSeeder] {} EstadosConsultaStock creados.", estados.size());
-        }
-
-        private void seedNivelesStock() {
-                if (nivelStockRepository.count() > 0) {
-                        log.info("[DataSeeder] NivelesStock ya existen, se omiten.");
-                        return;
-                }
-                com.mendohard.api.model.Categoria categoria = categoriaRepository.findByCCodigo("CAT-003")
-                                .orElseThrow(() -> new IllegalStateException(
-                                                "Categoría 'Desktop (DIMM)' (CAT-003) no encontrada"));
-
-                List<NivelStock> niveles = List.of(
-                                NivelStock.builder().NSCodigo("NS-001").NSNombre("Stock Bajo").NSCantidadDesde(1)
-                                                .NSCantidadHasta(5).NSFechaAlta(LocalDate.now()).categoria(categoria)
-                                                .build(),
-                                NivelStock.builder().NSCodigo("NS-002").NSNombre("Stock Medio").NSCantidadDesde(6)
-                                                .NSCantidadHasta(15).NSFechaAlta(LocalDate.now()).categoria(categoria)
-                                                .build(),
-                                NivelStock.builder().NSCodigo("NS-003").NSNombre("Stock Alto").NSCantidadDesde(16)
-                                                .NSCantidadHasta(100).NSFechaAlta(LocalDate.now()).categoria(categoria)
-                                                .build());
-                nivelStockRepository.saveAll(niveles);
-                log.info("[DataSeeder] {} NivelesStock creados.", niveles.size());
         }
 
         // ─── ESTADOS ─────────────────────────────────────────────────────────────────
@@ -555,7 +531,6 @@ public class DataSeeder implements CommandLineRunner {
                                 .algoritmoClave(algoritmo)
                                 .build();
 
-                // Estado Vendedor
                 EstadoVendedor estadoAceptado = estadoVendedorRepository.findByNombreActivo("VendedorAceptado")
                                 .orElseThrow(() -> new IllegalStateException("Estado VendedorAceptado no encontrado"));
 
@@ -566,27 +541,64 @@ public class DataSeeder implements CommandLineRunner {
                                 .build();
                 vendedor.setVendedorEstados(new java.util.ArrayList<>(List.of(vendedorEstado)));
 
-                // Comercio asociado
-                Departamento depto = departamentoRepository.findAll().stream().findFirst()
-                                .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
+                List<Departamento> todosDeptos = departamentoRepository.findAll();
+                Departamento deptoCapital = todosDeptos.stream().filter(d -> d.getDNombre().equals("Capital"))
+                                .findFirst().orElse(todosDeptos.get(0));
+                Departamento deptoGodoyCruz = todosDeptos.stream().filter(d -> d.getDNombre().equals("Godoy Cruz"))
+                                .findFirst().orElse(todosDeptos.get(0));
+                Departamento deptoGuaymallen = todosDeptos.stream().filter(d -> d.getDNombre().equals("Guaymallén"))
+                                .findFirst().orElse(todosDeptos.get(0));
+                Departamento deptoMaipu = todosDeptos.stream().filter(d -> d.getDNombre().equals("Maipú")).findFirst()
+                                .orElse(todosDeptos.get(0));
+                Departamento deptoLasHeras = todosDeptos.stream().filter(d -> d.getDNombre().equals("Las Heras"))
+                                .findFirst().orElse(todosDeptos.get(0));
+                Departamento deptoLujan = todosDeptos.stream().filter(d -> d.getDNombre().equals("Luján de Cuyo"))
+                                .findFirst().orElse(todosDeptos.get(0));
 
                 EstadoComercio estadoComAceptado = estadoComercioRepository.findByNombreActivo("ComercioAceptado")
                                 .orElseThrow(() -> new IllegalStateException("Estado ComercioAceptado no encontrado"));
 
+                Comercio c1 = buildComercio("COM-001", "HardMza Central", "2614441122", -32.8908f, -68.8271f,
+                                "Av. San Martín", "1020", deptoCapital, estadoComAceptado);
+                Comercio c2 = buildComercio("COM-002", "HardMza Godoy Cruz", "2614441123", -32.9234f, -68.8412f,
+                                "Av. San Martín Sur", "1540", deptoGodoyCruz, estadoComAceptado);
+                Comercio c3 = buildComercio("COM-003", "HardMza Guaymallén", "2614441124", -32.8981f, -68.7915f,
+                                "Acceso Este", "3280", deptoGuaymallen, estadoComAceptado);
+                Comercio c4 = buildComercio("COM-004", "HardMza Maipú", "2614441125", -32.9801f, -68.7889f, "Pescara",
+                                "250", deptoMaipu, estadoComAceptado);
+                Comercio c5 = buildComercio("COM-005", "HardMza Las Heras", "2614441126", -32.8512f, -68.8310f,
+                                "San Miguel", "1110", deptoLasHeras, estadoComAceptado);
+                Comercio c6 = buildComercio("COM-006", "HardMza Luján", "2614441127", -33.0012f, -68.8712f, "Italia",
+                                "5800", deptoLujan, estadoComAceptado);
+                Comercio c7 = buildComercio("COM-007", "HardMza Express Centro", "2614441128", -32.8895f, -68.8451f,
+                                "Peatonal Sarmiento", "145", deptoCapital, estadoComAceptado);
+
+                vendedor.setComercios(new java.util.ArrayList<>(List.of(c1, c2, c3, c4, c5, c6, c7)));
+
+                vendedor = (Vendedor) usuarioRepository.save(vendedor);
+                vendedor.setUCodigo("VEN-" + vendedor.getId());
+                usuarioRepository.save(vendedor);
+
+                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
+                strategy.generarYGuardarClave(vendedor, "vendedor1234");
+                log.info("[DataSeeder] Vendedor de prueba y sus 7 Comercios creados.");
+        }
+
+        private Comercio buildComercio(String codigo, String nombre, String tel, float lat, float lon, String calle,
+                        String nro, Departamento depto, EstadoComercio estado) {
                 ComercioEstado comercioEstado = ComercioEstado.builder()
                                 .CEFechaDesde(LocalDate.now())
                                 .CEFechaHasta(null)
-                                .estadoComercio(estadoComAceptado)
+                                .estadoComercio(estado)
                                 .build();
-
-                Comercio comercio = Comercio.builder()
-                                .CCodigo("TEMP-COM")
-                                .CNombreFantasia("HardMza")
-                                .CTelefono("2614441122")
-                                .CLatitud(-32.89084f)
-                                .CLongitud(-68.82717f)
-                                .CDireccionCalle("San Martín")
-                                .CNumeroEnCalle("1020")
+                return Comercio.builder()
+                                .CCodigo(codigo)
+                                .CNombreFantasia(nombre)
+                                .CTelefono(tel)
+                                .CLatitud(lat)
+                                .CLongitud(lon)
+                                .CDireccionCalle(calle)
+                                .CNumeroEnCalle(nro)
                                 .CFechaSolicitud(LocalDate.now())
                                 .CFechaAlta(LocalDate.now())
                                 .CFechaBaja(null)
@@ -594,228 +606,215 @@ public class DataSeeder implements CommandLineRunner {
                                 .departamento(depto)
                                 .comercioEstados(new java.util.ArrayList<>(List.of(comercioEstado)))
                                 .build();
-
-                vendedor.setComercios(new java.util.ArrayList<>(List.of(comercio)));
-
-                vendedor = (Vendedor) usuarioRepository.save(vendedor);
-                vendedor.setUCodigo("VEN-" + vendedor.getId());
-                vendedor.getComercios().get(0).setCCodigo("COM-" + vendedor.getComercios().get(0).getId());
-                usuarioRepository.save(vendedor);
-
-                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
-                strategy.generarYGuardarClave(vendedor, "vendedor1234");
-                log.info("[DataSeeder] Vendedor de prueba y su Comercio creados.");
-        }
-
-        private void seedVendedorPendienteYComercio() {
-                if (usuarioRepository.existsByUEmailActivo("vendedor_pendiente@mendohard.com")) {
-                        log.info("[DataSeeder] Vendedor pendiente ya existe, se omite.");
-                        return;
-                }
-
-                AlgoritmoClave algoritmo = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
-                                .orElseThrow(() -> new IllegalStateException("AlgoritmoClave no encontrado"));
-                Rol rolVendedor = rolRepository.findByRNombreActivo("Vendedor")
-                                .orElseThrow(() -> new IllegalStateException("Rol Vendedor no encontrado"));
-
-                Vendedor vendedor = Vendedor.builder()
-                                .UCodigo("TEMP-VP")
-                                .UNombre("Carlos")
-                                .UApellido("Pendiente")
-                                .UEmail("vendedor_pendiente@mendohard.com")
-                                .VTelefono("2615559999")
-                                .VCuit("27309999999")
-                                .VRazonSocial("Pendiente Tech SRL")
-                                .VCategoriaFiscal("Responsable Inscripto")
-                                .UFechaAlta(LocalDate.now())
-                                .UFechaBaja(null)
-                                .rol(rolVendedor)
-                                .algoritmoClave(algoritmo)
-                                .build();
-
-                // Estado Vendedor
-                EstadoVendedor estadoPendiente = estadoVendedorRepository.findByNombreActivo("VendedorPendiente")
-                                .orElseThrow(() -> new IllegalStateException("Estado VendedorPendiente no encontrado"));
-
-                VendedorEstado vendedorEstado = VendedorEstado.builder()
-                                .VEFechaDesde(LocalDate.now())
-                                .VEFechaHasta(null)
-                                .estadoVendedor(estadoPendiente)
-                                .build();
-                vendedor.setVendedorEstados(new java.util.ArrayList<>(List.of(vendedorEstado)));
-
-                // Comercio asociado
-                Departamento depto = departamentoRepository.findAll().stream().findFirst()
-                                .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
-
-                EstadoComercio estadoComPendiente = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
-                                .orElseThrow(() -> new IllegalStateException("Estado ComercioPendiente no encontrado"));
-
-                ComercioEstado comercioEstado = ComercioEstado.builder()
-                                .CEFechaDesde(LocalDate.now())
-                                .CEFechaHasta(null)
-                                .estadoComercio(estadoComPendiente)
-                                .build();
-
-                Comercio comercio = Comercio.builder()
-                                .CCodigo("TEMP-COMP")
-                                .CNombreFantasia("HardPendiente")
-                                .CTelefono("2614449999")
-                                .CLatitud(-32.89000f)
-                                .CLongitud(-68.82000f)
-                                .CDireccionCalle("San Martín")
-                                .CNumeroEnCalle("9999")
-                                .CFechaSolicitud(LocalDate.now())
-                                .CFechaAlta(null) // Todavía no aceptado
-                                .CFechaBaja(null)
-                                .CHorarioAtencion("L a V de 9 a 18")
-                                .departamento(depto)
-                                .comercioEstados(new java.util.ArrayList<>(List.of(comercioEstado)))
-                                .build();
-
-                vendedor.setComercios(new java.util.ArrayList<>(List.of(comercio)));
-
-                vendedor = (Vendedor) usuarioRepository.save(vendedor);
-                vendedor.setUCodigo("VEN-" + vendedor.getId());
-                vendedor.getComercios().get(0).setCCodigo("COM-" + vendedor.getComercios().get(0).getId());
-                usuarioRepository.save(vendedor);
-
-                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
-                strategy.generarYGuardarClave(vendedor, "vendedor1234");
-                log.info("[DataSeeder] Vendedor PENDIENTE de prueba y su Comercio creados.");
         }
 
         private void seedCategoriasYProductos() {
                 if (categoriaRepository.count() > 0) {
-                        log.info("[DataSeeder] Categorías ya existen, se omiten.");
+                        log.info("[DataSeeder] Categorías ya existen, se omite.");
                         return;
                 }
 
-                // Jerarquía de Categorías
-                Categoria hardware = Categoria.builder()
-                                .CCodigo("CAT-001")
-                                .CNombre("Hardware")
-                                .CFechaAlta(LocalDate.now())
-                                .build();
-                hardware = categoriaRepository.save(hardware);
+                // Raíz 1: Componentes Internos
+                Categoria catRoot1 = saveCat("CAT-ROOT-01", "Componentes Internos (Hardware)", null);
 
-                Categoria memorias = Categoria.builder()
-                                .CCodigo("CAT-002")
-                                .CNombre("Memorias RAM")
-                                .categoriaPadre(hardware)
-                                .CFechaAlta(LocalDate.now())
-                                .build();
-                memorias = categoriaRepository.save(memorias);
+                Categoria catProc = saveCat("CAT-PROC", "Procesadores (CPU)", catRoot1);
+                Categoria catProcAM4 = saveCat("CAT-PROC-AM4", "Procesadores Socket AM4", catProc);
+                Categoria catProcAM5 = saveCat("CAT-PROC-AM5", "Procesadores Socket AM5", catProc);
+                Categoria catProcLGA1700 = saveCat("CAT-PROC-LGA1700", "Procesadores Socket LGA1700", catProc);
+                Categoria catProcLGA1200 = saveCat("CAT-PROC-LGA1200", "Procesadores Socket LGA1200", catProc);
 
-                Categoria desktopDimm = Categoria.builder()
-                                .CCodigo("CAT-003")
-                                .CNombre("Desktop (DIMM)")
-                                .categoriaPadre(memorias)
-                                .CFechaAlta(LocalDate.now())
-                                .build();
-                desktopDimm = categoriaRepository.save(desktopDimm);
+                Categoria catMobo = saveCat("CAT-MOBO", "Placas Base (Motherboards)", catRoot1);
+                Categoria catMoboAM4 = saveCat("CAT-MOBO-AM4", "Motherboards AM4", catMobo);
+                Categoria catMoboAM5 = saveCat("CAT-MOBO-AM5", "Motherboards AM5", catMobo);
+                Categoria catMoboLGA1700 = saveCat("CAT-MOBO-LGA1700", "Motherboards LGA1700", catMobo);
 
-                // Productos
-                Producto ramActiva = Producto.builder()
-                                .PCodigo("PROD-001")
-                                .PNombreTecnico("Memoria RAM Kingston Fury Beast 16GB")
-                                .PEspecificaciones(Map.of("Tipo", "DDR4", "Capacidad", "16GB", "Velocidad", "3200MHz"))
-                                .PImagenUrl("https://example.com/ram-16gb.jpg")
-                                .PFechaAlta(LocalDate.now())
-                                .categoria(desktopDimm)
-                                .build();
-                productoRepository.save(ramActiva);
+                Categoria catRam = saveCat("CAT-RAM", "Memorias RAM", catRoot1);
+                Categoria catRamDimm = saveCat("CAT-RAM-DIMM", "Desktop (DIMM)", catRam);
+                Categoria catRamSodimm = saveCat("CAT-RAM-SODIMM", "Notebook / Mini PC (SODIMM)", catRam);
 
-                Producto ramInactiva = Producto.builder()
-                                .PCodigo("PROD-002")
-                                .PNombreTecnico("Memoria RAM Genérica 4GB (Descontinuada)")
-                                .PEspecificaciones(Map.of("Tipo", "DDR3", "Capacidad", "4GB"))
-                                .PImagenUrl("https://example.com/ram-4gb.jpg")
-                                .PFechaAlta(LocalDate.now().minusYears(1))
-                                .PFechaBaja(LocalDate.now())
-                                .categoria(desktopDimm)
-                                .build();
-                productoRepository.save(ramInactiva);
+                Categoria catStorage = saveCat("CAT-STORAGE", "Almacenamiento", catRoot1);
+                Categoria catStorageM2 = saveCat("CAT-STORAGE-M2", "SSD M.2 NVMe", catStorage);
+                Categoria catStorageSata = saveCat("CAT-STORAGE-SATA", "SSD SATA 2.5\"", catStorage);
+                Categoria catStorageHdd = saveCat("CAT-STORAGE-HDD", "Discos Rígidos HDD", catStorage);
 
-                log.info("[DataSeeder] Categorías y Productos de prueba creados.");
+                Categoria catGpu = saveCat("CAT-GPU", "Placas de Video (GPU)", catRoot1);
+                Categoria catGpuPcie4 = saveCat("CAT-GPU-PCIE4", "Placas de Video PCIe 4.0", catGpu);
+                Categoria catGpuPcie3 = saveCat("CAT-GPU-PCIE3", "Placas de Video PCIe 3.0", catGpu);
+
+                Categoria catPsu = saveCat("CAT-PSU", "Fuentes de Alimentación (PSU)", catRoot1);
+
+                Categoria catCooling = saveCat("CAT-COOL", "Refrigeración", catRoot1);
+                Categoria catCoolAir = saveCat("CAT-COOL-AIR", "Refrigeración por Aire", catCooling);
+                Categoria catCoolLiquid = saveCat("CAT-COOL-LIQ", "Refrigeración Líquida (AIO)", catCooling);
+                Categoria catCoolCase = saveCat("CAT-COOL-CASE", "Coolers para Gabinete", catCooling);
+
+                // Raíz 2: Periféricos y Accesorios
+                Categoria catRoot2 = saveCat("CAT-ROOT-02", "Periféricos y Accesorios", null);
+                Categoria catMonitor = saveCat("CAT-PER-MON", "Monitores y Video", catRoot2);
+                Categoria catKeyMouse = saveCat("CAT-PER-KM", "Teclados y Mouses", catRoot2);
+
+                Categoria catAudio = saveCat("CAT-PER-AUD", "Audio", catRoot2);
+                Categoria catAudioHead = saveCat("CAT-PER-AUD-HEAD", "Auriculares", catAudio);
+                Categoria catAudioSpeak = saveCat("CAT-PER-AUD-SPK", "Parlantes", catAudio);
+                Categoria catAudioMic = saveCat("CAT-PER-AUD-MIC", "Micrófonos", catAudio);
+
+                Categoria catCable = saveCat("CAT-PER-CAB", "Cables y Adaptadores", catRoot2);
+                Categoria catCableVideo = saveCat("CAT-PER-CAB-VID", "HDMI / DisplayPort", catCable);
+                Categoria catCableUsb = saveCat("CAT-PER-CAB-USB", "USB / Type-C", catCable);
+                Categoria catCablePwr = saveCat("CAT-PER-CAB-PWR", "Alimentación", catCable);
+
+                // Raíz 3: Conectividad y Redes
+                Categoria catRoot3 = saveCat("CAT-ROOT-03", "Conectividad y Redes", null);
+                Categoria catNetRouter = saveCat("CAT-NET-ROUT", "Routers y Extensores", catRoot3);
+                Categoria catNetCard = saveCat("CAT-NET-CARD", "Placas de Red (Wi-Fi / Bluetooth)", catRoot3);
+
+                int prodCount = 1;
+                prodCount = saveProduct(prodCount, "Procesador 6 Cores / 12 Threads Socket AM4",
+                                Map.of("Socket", "AM4", "Cores", "6", "Threads", "12"), catProcAM4);
+                prodCount = saveProduct(prodCount, "Procesador 8 Cores / 16 Threads Socket AM5",
+                                Map.of("Socket", "AM5", "Cores", "8", "Threads", "16"), catProcAM5);
+                prodCount = saveProduct(prodCount, "Procesador 10 Cores / 16 Threads Socket LGA1700",
+                                Map.of("Socket", "LGA1700", "Cores", "10", "Threads", "16"), catProcLGA1700);
+                prodCount = saveProduct(prodCount, "Procesador 4 Cores / 8 Threads Socket LGA1200",
+                                Map.of("Socket", "LGA1200", "Cores", "4", "Threads", "8"), catProcLGA1200);
+
+                prodCount = saveProduct(prodCount, "Motherboard Micro-ATX AM4 B450",
+                                Map.of("Socket", "AM4", "Chipset", "B450", "Factor", "Micro-ATX"), catMoboAM4);
+                prodCount = saveProduct(prodCount, "Motherboard ATX AM5 B650",
+                                Map.of("Socket", "AM5", "Chipset", "B650", "Factor", "ATX"), catMoboAM5);
+                prodCount = saveProduct(prodCount, "Motherboard Micro-ATX LGA1700 B760",
+                                Map.of("Socket", "LGA1700", "Chipset", "B760", "Factor", "Micro-ATX"), catMoboLGA1700);
+
+                prodCount = saveProduct(prodCount, "Memoria RAM 16GB DDR4 3200MHz",
+                                Map.of("Tipo", "DDR4", "Capacidad", "16GB", "Frecuencia", "3200MHz"), catRamDimm);
+                prodCount = saveProduct(prodCount, "Memoria RAM 8GB DDR4 2666MHz SODIMM",
+                                Map.of("Tipo", "DDR4 SODIMM", "Capacidad", "8GB", "Frecuencia", "2666MHz"),
+                                catRamSodimm);
+
+                prodCount = saveProduct(prodCount, "SSD M.2 NVMe 1TB PCIe 4.0",
+                                Map.of("Capacidad", "1TB", "Interfaz", "PCIe 4.0", "Formato", "M.2 2280"),
+                                catStorageM2);
+                prodCount = saveProduct(prodCount, "SSD SATA 2.5\" 500GB",
+                                Map.of("Capacidad", "500GB", "Interfaz", "SATA III", "Formato", "2.5\""),
+                                catStorageSata);
+                prodCount = saveProduct(prodCount, "Disco Rígido HDD 2TB 7200RPM",
+                                Map.of("Capacidad", "2TB", "Velocidad", "7200 RPM", "Formato", "3.5\""), catStorageHdd);
+
+                prodCount = saveProduct(prodCount, "Placa de Video 8GB GDDR6 PCIe 4.0",
+                                Map.of("Memoria", "8GB GDDR6", "Interfaz", "PCIe 4.0 x16"), catGpuPcie4);
+                prodCount = saveProduct(prodCount, "Placa de Video 4GB GDDR5 PCIe 3.0",
+                                Map.of("Memoria", "4GB GDDR5", "Interfaz", "PCIe 3.0 x16"), catGpuPcie3);
+
+                prodCount = saveProduct(prodCount, "Fuente de Alimentación 650W 80 Plus Bronze",
+                                Map.of("Potencia", "650W", "Certificación", "80 Plus Bronze"), catPsu);
+
+                prodCount = saveProduct(prodCount, "Cooler para CPU por Aire 120mm RGB",
+                                Map.of("Tipo", "Aire", "Ventilador", "120mm"), catCoolAir);
+                prodCount = saveProduct(prodCount, "Refrigeración Líquida AIO 240mm",
+                                Map.of("Tipo", "Líquida AIO", "Radiador", "240mm"), catCoolLiquid);
+                prodCount = saveProduct(prodCount, "Cooler para Gabinete 120mm Silencioso",
+                                Map.of("Tamaño", "120mm", "Nivel de Ruido", "20 dBA"), catCoolCase);
+
+                prodCount = saveProduct(prodCount, "Monitor 24\" IPS 75Hz Full HD",
+                                Map.of("Tamaño", "24\"", "Panel", "IPS", "Frecuencia", "75Hz"), catMonitor);
+                prodCount = saveProduct(prodCount, "Kit Teclado y Mouse Inalámbricos",
+                                Map.of("Conectividad", "Inalámbrica 2.4GHz"), catKeyMouse);
+
+                prodCount = saveProduct(prodCount, "Auriculares Over-Ear con Micrófono",
+                                Map.of("Diseño", "Over-Ear", "Micrófono", "Sí"), catAudioHead);
+                prodCount = saveProduct(prodCount, "Parlantes Estéreo 2.0 USB",
+                                Map.of("Canales", "2.0", "Potencia", "6W RMS"), catAudioSpeak);
+                prodCount = saveProduct(prodCount, "Micrófono Condensador USB para Streaming",
+                                Map.of("Tipo", "Condensador", "Conexión", "USB"), catAudioMic);
+
+                prodCount = saveProduct(prodCount, "Cable HDMI 2.0 4K 2 Metros",
+                                Map.of("Versión", "HDMI 2.0", "Longitud", "2m"), catCableVideo);
+                prodCount = saveProduct(prodCount, "Cable USB a Type-C Carga Rápida",
+                                Map.of("Conector A", "USB-A", "Conector B", "Type-C"), catCableUsb);
+                prodCount = saveProduct(prodCount, "Cable de Alimentación Interlock 220V",
+                                Map.of("Conector", "C13", "Corriente", "10A"), catCablePwr);
+
+                prodCount = saveProduct(prodCount, "Router Dual-Band AC1200 4 Antenas",
+                                Map.of("Banda", "Dual-Band", "Estándar", "Wi-Fi 5 (802.11ac)"), catNetRouter);
+                prodCount = saveProduct(prodCount, "Placa de Red PCIe Wi-Fi 6 + Bluetooth 5.0",
+                                Map.of("Interfaz", "PCIe", "Wi-Fi", "Wi-Fi 6", "Bluetooth", "5.0"), catNetCard);
+
+                log.info("[DataSeeder] Taxonomía de Categorías y Productos creada.");
         }
 
-        private void seedVendedorAceptadoYComercioPendiente() {
-                if (usuarioRepository.existsByUEmailActivo("vendedor_aceptado@mendohard.com")) {
-                        log.info("[DataSeeder] Vendedor aceptado con comercio pendiente ya existe, se omite.");
+        private Categoria saveCat(String codigo, String nombre, Categoria padre) {
+                return categoriaRepository.save(Categoria.builder()
+                                .CCodigo(codigo)
+                                .CNombre(nombre)
+                                .categoriaPadre(padre)
+                                .CFechaAlta(LocalDate.now())
+                                .build());
+        }
+
+        private int saveProduct(int currentCount, String nombre, Map<String, Object> especificaciones, Categoria cat) {
+                String codigo = String.format("PROD-%03d", currentCount);
+                Producto p = Producto.builder()
+                                .PCodigo(codigo)
+                                .PNombreTecnico(nombre)
+                                .PEspecificaciones(especificaciones)
+                                .PImagenUrl("https://via.placeholder.com/150")
+                                .PFechaAlta(LocalDate.now())
+                                .categoria(cat)
+                                .build();
+                productoRepository.save(p);
+                return currentCount + 1;
+        }
+
+        private int crearNivelesParaCategoria(Categoria cat, int currentCounter) {
+                NivelStock poco = NivelStock.builder()
+                                .NSCodigo(String.format("NS-%03d", currentCounter++))
+                                .NSNombre("Poco")
+                                .NSCantidadDesde(1)
+                                .NSCantidadHasta(5)
+                                .NSFechaAlta(LocalDate.now())
+                                .categoria(cat)
+                                .build();
+
+                NivelStock medio = NivelStock.builder()
+                                .NSCodigo(String.format("NS-%03d", currentCounter++))
+                                .NSNombre("Medio")
+                                .NSCantidadDesde(6)
+                                .NSCantidadHasta(15)
+                                .NSFechaAlta(LocalDate.now())
+                                .categoria(cat)
+                                .build();
+
+                NivelStock mucho = NivelStock.builder()
+                                .NSCodigo(String.format("NS-%03d", currentCounter++))
+                                .NSNombre("Mucho")
+                                .NSCantidadDesde(16)
+                                .NSCantidadHasta(100)
+                                .NSFechaAlta(LocalDate.now())
+                                .categoria(cat)
+                                .build();
+
+                nivelStockRepository.saveAll(List.of(poco, medio, mucho));
+                return currentCounter;
+        }
+
+        private void seedNivelesStock() {
+                if (nivelStockRepository.count() > 0) {
+                        log.info("[DataSeeder] NivelesStock ya existen, se omite.");
                         return;
                 }
 
-                AlgoritmoClave algoritmo = algoritmoClaveRepository.findByACNombreActivo("ContraseñaEnSistema")
-                                .orElseThrow(() -> new IllegalStateException("AlgoritmoClave no encontrado"));
-                Rol rolVendedor = rolRepository.findByRNombreActivo("Vendedor")
-                                .orElseThrow(() -> new IllegalStateException("Rol Vendedor no encontrado"));
+                // Obtener todas las categorías que son hoja (las que no son categoría padre de ninguna otra)
+                List<Categoria> todas = categoriaRepository.findAll();
+                List<Categoria> categoriasHoja = todas.stream()
+                                .filter(cat -> todas.stream().noneMatch(c -> cat.equals(c.getCategoriaPadre())))
+                                .toList();
 
-                Vendedor vendedor = Vendedor.builder()
-                                .UCodigo("TEMP-VA")
-                                .UNombre("Esteban")
-                                .UApellido("Trabajo")
-                                .UEmail("vendedor_aceptado@mendohard.com")
-                                .VTelefono("2617778888")
-                                .VCuit("20307778889")
-                                .VRazonSocial("Aceptado Tech SRL")
-                                .VCategoriaFiscal("Monotributista")
-                                .UFechaAlta(LocalDate.now())
-                                .UFechaBaja(null)
-                                .rol(rolVendedor)
-                                .algoritmoClave(algoritmo)
-                                .build();
+                int counter = 1;
+                for (Categoria catHoja : categoriasHoja) {
+                        counter = crearNivelesParaCategoria(catHoja, counter);
+                }
 
-                // Estado Vendedor: Aceptado
-                EstadoVendedor estadoAceptado = estadoVendedorRepository.findByNombreActivo("VendedorAceptado")
-                                .orElseThrow(() -> new IllegalStateException("Estado VendedorAceptado no encontrado"));
-
-                VendedorEstado vendedorEstado = VendedorEstado.builder()
-                                .VEFechaDesde(LocalDate.now())
-                                .VEFechaHasta(null)
-                                .estadoVendedor(estadoAceptado)
-                                .build();
-                vendedor.setVendedorEstados(new java.util.ArrayList<>(List.of(vendedorEstado)));
-
-                // Comercio asociado: Pendiente
-                Departamento depto = departamentoRepository.findAll().stream().findFirst()
-                                .orElseThrow(() -> new IllegalStateException("No hay departamentos cargados"));
-
-                EstadoComercio estadoComPendiente = estadoComercioRepository.findByNombreActivo("ComercioPendiente")
-                                .orElseThrow(() -> new IllegalStateException("Estado ComercioPendiente no encontrado"));
-
-                ComercioEstado comercioEstado = ComercioEstado.builder()
-                                .CEFechaDesde(LocalDate.now())
-                                .CEFechaHasta(null)
-                                .estadoComercio(estadoComPendiente)
-                                .build();
-
-                Comercio comercio = Comercio.builder()
-                                .CCodigo("TEMP-COMP-2")
-                                .CNombreFantasia("HardPendienteVal")
-                                .CTelefono("2614448888")
-                                .CLatitud(-32.89010f)
-                                .CLongitud(-68.82010f)
-                                .CDireccionCalle("San Martín Sur")
-                                .CNumeroEnCalle("8888")
-                                .CFechaSolicitud(LocalDate.now())
-                                .CFechaAlta(null) // Todavía no aceptado
-                                .CFechaBaja(null)
-                                .CHorarioAtencion("L a V de 9 a 18")
-                                .departamento(depto)
-                                .comercioEstados(new java.util.ArrayList<>(List.of(comercioEstado)))
-                                .build();
-
-                vendedor.setComercios(new java.util.ArrayList<>(List.of(comercio)));
-
-                vendedor = (Vendedor) usuarioRepository.save(vendedor);
-                vendedor.setUCodigo("VEN-" + vendedor.getId());
-                vendedor.getComercios().get(0).setCCodigo("COM-" + vendedor.getComercios().get(0).getId());
-                usuarioRepository.save(vendedor);
-
-                ClaveStrategy strategy = claveStrategyFactory.getStrategy(algoritmo.getACNombre());
-                strategy.generarYGuardarClave(vendedor, "vendedor1234");
-                log.info("[DataSeeder] Vendedor ACEPTADO de prueba y su Comercio PENDIENTE creados.");
+                log.info("[DataSeeder] Se crearon los niveles de stock (Poco, Medio, Mucho) para las {} categorías hoja.", categoriasHoja.size());
         }
 
         private void seedConsultasStock() {
@@ -838,9 +837,10 @@ public class DataSeeder implements CommandLineRunner {
                 Usuario uVendedor = usuarioRepository.findByUEmailAndUFechaBajaIsNull("vendedor@mendohard.com")
                                 .orElseThrow(() -> new IllegalStateException("Vendedor de prueba no encontrado"));
                 Vendedor vendedor = (Vendedor) uVendedor;
-                Comercio comercio = vendedor.getComercios().stream().findFirst()
+                Comercio comercio = vendedor.getComercios().stream()
+                                .filter(c -> "COM-001".equals(c.getCCodigo())).findFirst()
                                 .orElseThrow(() -> new IllegalStateException(
-                                                "El vendedor de prueba no tiene comercios"));
+                                                "El comercio COM-001 no fue encontrado para el vendedor."));
 
                 Usuario uConsumidor = usuarioRepository.findByUEmailAndUFechaBajaIsNull("consumidor@mendohard.com")
                                 .orElseThrow(() -> new IllegalStateException("Consumidor de prueba no encontrado"));
@@ -885,6 +885,6 @@ public class DataSeeder implements CommandLineRunner {
                                 .build();
 
                 consultaStockRepository.saveAll(List.of(consulta1, consulta2, consulta3));
-                log.info("[DataSeeder] 3 ConsultaStock de prueba (vencidas hace 3 min) creadas exitosamente.");
+                log.info("[DataSeeder] 3 ConsultaStock de prueba creadas exitosamente para COM-001.");
         }
 }

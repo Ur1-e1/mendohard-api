@@ -4,6 +4,7 @@ package com.mendohard.api.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -177,6 +178,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(buildResponse("ASIGNACION_EXISTENTE", ex.getMessage(), 400, List.of(), null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // K. JSON Mal Formado o Cuerpo de Petición Ilegible
+    //    errorCode: DATA_INCONSISTENCY | status: 400
+    // ─────────────────────────────────────────────────────────────────────────
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        log.error("HttpMessageNotReadableException: cuerpo de la petición (JSON) mal formado o ilegible", ex);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildResponse("DATA_INCONSISTENCY", "El formato de los datos enviados es incorrecto (JSON mal formado o ausente)", 400, List.of(), null));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
